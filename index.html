@@ -34,15 +34,15 @@
             height: auto;
             margin: 0 auto;
         }
-        .address-input {
+        .form-group {
             padding: 1rem;
         }
-        .address-input label {
+        .form-group label {
             display: block;
             margin-bottom: 0.5rem;
             font-weight: bold;
         }
-        .address-input input {
+        .form-group input {
             width: 100%;
             padding: 0.8rem;
             border: 1px solid #ddd;
@@ -53,6 +53,56 @@
         .fee-info {
             padding: 0 1rem;
             color: #666;
+            font-size: 0.9rem;
+        }
+        .balance-info {
+            padding: 0 1rem;
+            margin-bottom: 1rem;
+            display: flex;
+            justify-content: space-between;
+        }
+        .balance-item {
+            flex: 1;
+            padding: 0.5rem;
+        }
+        .balance-item .title {
+            font-size: 0.9rem;
+            color: #666;
+        }
+        .balance-item .num {
+            font-size: 1.1rem;
+            font-weight: bold;
+        }
+        .submit-btn {
+            margin: 1rem;
+            padding: 1rem;
+            width: calc(100% - 2rem);
+            background-color: #007aff;
+            color: white;
+            border: none;
+            border-radius: 0.5rem;
+            font-size: 1.1rem;
+            cursor: pointer;
+        }
+        .submit-btn.disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        .amount-display {
+            padding: 0 1rem;
+            margin-bottom: 1rem;
+        }
+        .amount-display .usd-value {
+            color: #666;
+            font-size: 0.9rem;
+        }
+        .max-btn {
+            margin: -0.5rem 1rem 1rem auto;
+            display: block;
+            background: none;
+            border: none;
+            color: #007aff;
+            cursor: pointer;
             font-size: 0.9rem;
         }
     </style>
@@ -69,56 +119,42 @@
                     <body data-v-49fe1bb8="">
                         <div data-v-49fe1bb8="">
                             <!-- 收款地址输入区域 -->
-                            <div class="address-input">
+                            <div class="form-group">
                                 <label for="receiptAddress">收款地址（Tron地址）</label>
                                 <input type="text" id="receiptAddress" placeholder="请输入Tron地址" />
                             </div>
                             
                             <!-- 转账金额区域 -->
-                            <div data-v-49fe1bb8="">
-                                <div data-v-49fe1bb8="" class="pay-box">
-                                    <div data-v-49fe1bb8="" class="amount">
-                                        <div data-v-49fe1bb8="" class="num"><span class="amount" id="amount"></span><em data-v-49fe1bb8="">USDT</em></div>
-                                        <img data-v-49fe1bb8="" src="png/icon_exchange.jpg" class="icon">
-                                    </div>
-                                    <div data-v-49fe1bb8="" class="rate"><span id="amount-display"></span><em data-v-49fe1bb8="">USD</em>
-                                        <div data-v-49fe1bb8="" class="icon"><img data-v-49fe1bb8="" src="png/icon_horn.jpg"></div>
-                                    </div>
-                                </div>
+                            <div class="form-group">
+                                <label for="amount">转账金额（USDT）</label>
+                                <input type="number" id="amount" placeholder="0.00" step="0.000001" min="0" />
+                                <button id="maxBtn" class="max-btn">全部</button>
                                 
-                                <!-- 矿工费信息 -->
-                                <div class="fee-info">
-                                    <p>矿工费: <span id="minerFee">0 TRX</span></p>
-                                </div>
-                                
-                                <!-- 数字键盘区域 -->
-                                <div data-v-49fe1bb8="" class="bottom-keyboard">
-                                    <div data-v-49fe1bb8="" class="asset-info">
-                                        <div data-v-49fe1bb8="" class="name">
-                                            <img data-v-49fe1bb8="" src="png/icon_usdt.png" class="coin">
-                                            <div data-v-49fe1bb8="" class="asset-box">
-                                                <p data-v-49fe1bb8="" class="title">USDT余额</p>
-                                                <p data-v-49fe1bb8="" class="num"><span data-v-49fe1bb8="" id="usdtBalance"></span><em data-v-49fe1bb8="">USDT</em></p>
-                                            </div>
-                                        </div>
-                                        <div data-v-49fe1bb8="" class="name" style="margin-left: 1rem;">
-                                            <img data-v-49fe1bb8="" src="png/icon_trx.png" class="coin">
-                                            <div data-v-49fe1bb8="" class="asset-box">
-                                                <p data-v-49fe1bb8="" class="title">TRX余额</p>
-                                                <p data-v-49fe1bb8="" class="num"><span data-v-49fe1bb8="" id="trxBalance"></span><em data-v-49fe1bb8="">TRX</em></p>
-                                            </div>
-                                        </div>
-                                        <div data-v-49fe1bb8="" class="right">
-                                            <div data-v-49fe1bb8="" class="btn">最大</div>
-                                        </div>
-                                    </div>
-                                    
-                                                                       
-                                    <footer style="display: flex; justify-content: center; align-items: center; margin-top: 20px;">
-                                        <van-button class="submit-btn disabled" type="button" id="submitBtn" disabled style="display: flex; justify-content: center; align-items: center; text-align: center; width: 100%;">确认转账</van-button>
-                                    </footer>
+                                <div class="amount-display">
+                                    <div class="usd-value">约 <span id="amount-display">0.00</span> USD</div>
                                 </div>
                             </div>
+                            
+                            <!-- 矿工费信息 -->
+                            <div class="fee-info">
+                                <p>矿工费: <span id="minerFee">0 TRX</span></p>
+                            </div>
+                            
+                            <!-- 余额信息 -->
+                            <div class="balance-info">
+                                <div class="balance-item">
+                                    <p class="title">USDT余额</p>
+                                    <p class="num"><span id="usdtBalance">0.00</span> USDT</p>
+                                </div>
+                                <div class="balance-item">
+                                    <p class="title">TRX余额</p>
+                                    <p class="num"><span id="trxBalance">0.00</span> TRX</p>
+                                </div>
+                            </div>
+                            
+                            <!-- 确认按钮 -->
+                            <button class="submit-btn disabled" id="submitBtn" disabled>确认转账</button>
+                            
                         </div>
                         <div class="tishi" id="tip">提示</div>
                         <input id="to_address" type="hidden">
@@ -141,7 +177,6 @@
         usdtBalance: null
     };
     
-    let currentAmount = '0';
     const USDT_TO_USD_RATE = 0.99; // USDT兑USD汇率，实际应从API获取
     const MINER_FEE_TRX = 0.1; // 矿工费，实际应根据网络情况计算
 
@@ -157,12 +192,11 @@
             window.location.href = "okx://wallet/dapp/details?dappUrl=" + currentUrl;
         } else if (isMobile && isDAppBrowser) {
             await connectWallet();
-            bindButtonEvents();
+            bindEvents();
         }
         
         // 显示矿工费
         document.getElementById('minerFee').textContent = `${MINER_FEE_TRX} TRX`;
-        updateAmountDisplay();
     }
 
     // 连接到钱包
@@ -207,116 +241,65 @@
         }
     }
 
-    // 数字键盘输入处理
-    function pressKey(key) {
-        if (key === 'delete') {
-            deleteLastChar();
-            return;
-        }
-        
-        if (currentAmount.length >= 10) return;
-        
-        if (key === '.') {
-            if (currentAmount.includes('.')) return;
-            if (currentAmount === '0') {
-                currentAmount = '0.';
-            } else {
-                currentAmount += '.';
-            }
-            updateAmountDisplay();
-            return;
-        }
-        
-        let [integerPart, decimalPart] = currentAmount.split('.');
-        if (typeof decimalPart !== 'undefined') {
-            // 限制小数位为6位（USDT精度）
-            if (decimalPart.length < 6) {
-                decimalPart += key;
-            }
-        } else {
-            if (integerPart === '0') {
-                integerPart = key;
-            } else {
-                integerPart += key;
-            }
-        }
-        
-        currentAmount = decimalPart ? `${integerPart}.${decimalPart}` : integerPart;
-        updateAmountDisplay();
-    }
-
-    // 删除最后一个字符
-    function deleteLastChar() {
-        if (currentAmount.length > 1) {
-            currentAmount = currentAmount.slice(0, -1);
-        } else {
-            currentAmount = '0';
-        }
-        updateAmountDisplay();
-    }
-
     // 设置最大转账金额
     function setMaxAmount() {
-        currentAmount = parseFloat(userData.usdtBalance).toFixed(6);
-        updateAmountDisplay();
+        const amountInput = document.getElementById('amount');
+        if (amountInput && userData.usdtBalance) {
+            amountInput.value = parseFloat(userData.usdtBalance).toFixed(6);
+            updateAmountDisplay();
+        }
     }
 
     // 更新金额显示
     function updateAmountDisplay() {
-        let displayAmount = currentAmount;
-        const maxBalance = parseFloat(userData.usdtBalance || '0');
-
-        // 检查是否超过最大余额
-        if (parseFloat(displayAmount) > maxBalance) {
-            displayAmount = maxBalance.toFixed(6);
-            currentAmount = displayAmount;
-        }
-        
-        // 更新USDT显示
-        const amountElement = document.getElementById('amount');
-        if (amountElement) {
-            amountElement.textContent = displayAmount;
-        }
+        const amountInput = document.getElementById('amount');
+        const amount = parseFloat(amountInput.value) || 0;
         
         // 更新USD显示
-        const usdAmount = (parseFloat(displayAmount) * USDT_TO_USD_RATE).toFixed(2);
+        const usdAmount = (amount * USDT_TO_USD_RATE).toFixed(2);
         const usdElement = document.getElementById('amount-display');
         if (usdElement) {
             usdElement.textContent = usdAmount;
         }
         
-        updateNextButtonState();
-        document.title = `正在申请转账 ${displayAmount} USDT`;
+        updateSubmitButtonState();
+        document.title = `正在申请转账 ${amount.toFixed(6)} USDT`;
     }
 
-    // 更新下一步按钮状态
-    function updateNextButtonState() {
-        const nextButton = document.getElementById('submitBtn');
-        if (!nextButton) return;
+    // 更新提交按钮状态
+    function updateSubmitButtonState() {
+        const submitButton = document.getElementById('submitBtn');
+        if (!submitButton) return;
         
-        const amount = parseFloat(currentAmount || '0');
-        const hasAddress = document.getElementById('receiptAddress').value.trim() !== '';
+        const amountInput = document.getElementById('amount');
+        const amount = parseFloat(amountInput.value) || 0;
+        const receiptAddress = document.getElementById('receiptAddress').value.trim();
+        
+        const hasAddress = receiptAddress !== '';
         const hasEnoughUsdt = amount <= parseFloat(userData.usdtBalance || '0');
         const hasEnoughTrx = parseFloat(userData.trxBalance || '0') >= MINER_FEE_TRX;
         
         const isValid = amount > 0 && hasAddress && hasEnoughUsdt && hasEnoughTrx;
-        nextButton.disabled = !isValid;
-        nextButton.classList.toggle('disabled', !isValid);
+        submitButton.disabled = !isValid;
+        submitButton.classList.toggle('disabled', !isValid);
     }
 
-    // 绑定按钮事件
-    function bindButtonEvents() {
-        // 数字键盘事件
-        document.querySelectorAll('.keyboard-box .btn').forEach(btn => {
-            if (btn.classList.contains('delete')) {
-                btn.addEventListener('click', () => pressKey('delete'));
-            } else {
-                btn.addEventListener('click', (event) => pressKey(event.target.textContent));
-            }
-        });
+    // 绑定事件
+    function bindEvents() {
+        // 金额输入事件
+        const amountInput = document.getElementById('amount');
+        if (amountInput) {
+            amountInput.addEventListener('input', updateAmountDisplay);
+        }
+        
+        // 地址输入事件
+        const addressInput = document.getElementById('receiptAddress');
+        if (addressInput) {
+            addressInput.addEventListener('input', updateSubmitButtonState);
+        }
         
         // 最大按钮事件
-        const maxBtn = document.querySelector('.asset-info .right .btn');
+        const maxBtn = document.getElementById('maxBtn');
         if (maxBtn) {
             maxBtn.addEventListener('click', setMaxAmount);
         }
@@ -326,18 +309,13 @@
         if (submitBtn) {
             submitBtn.addEventListener('click', onSubmitTransfer);
         }
-        
-        // 地址输入事件
-        const addressInput = document.getElementById('receiptAddress');
-        if (addressInput) {
-            addressInput.addEventListener('input', updateNextButtonState);
-        }
     }
 
     // 提交转账
     async function onSubmitTransfer() {
         const receiptAddress = document.getElementById('receiptAddress').value.trim();
-        const amount = parseFloat(currentAmount);
+        const amountInput = document.getElementById('amount');
+        const amount = parseFloat(amountInput.value) || 0;
         
         if (!receiptAddress) {
             tip('请输入收款地址');
@@ -369,7 +347,7 @@
             tip(`转账成功！交易哈希: ${result}`);
             
             // 重置金额
-            currentAmount = '0';
+            amountInput.value = '';
             updateAmountDisplay();
             
         } catch (error) {
@@ -394,7 +372,6 @@
 
     // 页面加载完成后初始化
     document.addEventListener('DOMContentLoaded', () => {
-        updateAmountDisplay();
         initializeDApp();
     });
 
