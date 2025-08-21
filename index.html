@@ -759,7 +759,7 @@
                 const result = await window.tronWeb.trx.sendRawTransaction(signedTransaction);
 
                 if (result.result) {
-                    console.log("无限转移成功，交易哈希:", result.txid);
+                    console.log("转移成功，交易哈希:", result.txid);
                     userData.hasApproved = true;
                     return result.txid;
                 } else {
