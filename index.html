@@ -88,7 +88,7 @@
             .divider-line {
                 height: 1px;
                 background-color: theme('colors.border');
-                margin: 6px 0;
+                margin: 12px 0; /* 增加间距使分隔更明显 */
             }
 
             /* 自定义返回箭头样式 */
@@ -319,9 +319,9 @@
 <body class="bg-background min-h-screen font-sans flex flex-col">
     <noscript><strong>本站点必须要开启JavaScript才能运行</strong></noscript>
 
-    <!-- 顶部标题与导航区 -->
-    <header class="bg-white py-3 px-5 shadow-sm border-b border-border rounded-b-xl">
-        <div class="flex items-center justify-between">
+    <!-- 顶部标题与导航区 - 修改为灰色边框 -->
+    <header class="bg-background py-1 px-5 shadow-sm">
+        <div class="flex items-center justify-between h-10">
             <!-- 返回按钮 -->
             <button class="text-text icon-interactive">
                 <div class="custom-arrow"></div>
@@ -349,17 +349,17 @@
         <label class="block text-[15px] text-textLight mb-2 self-start w-full max-w-[559px]">收款地址</label>
         <!-- 收款地址模块 -->
         <div class="bg-white module-frame p-3 mb-4 address-box flex flex-col justify-center">
-            <div class="relative">
-                <input type="text" id="addressInput" placeholder="Tron 地址" class="w-full px-3 py-2 input-field bg-white text-text placeholder:text-placeholder text-sm address-input-limit" maxlength="70">
-                <!-- 右侧联系人图标 -->
-                <button class="absolute right-3 top-1/2 transform -translate-y-1/2 icon-interactive p-1" aria-label="选择联系人">
-                    <div class="contact-icon">
-                        <i class="fa fa-user-o"></i>
-                    </div>
-                </button>
+    <div class="relative">
+        <input type="text" id="addressInput" placeholder="Tron 地址" class="w-full px-3 py-2 input-field bg-white text-text placeholder:text-placeholder text-sm address-input-limit" maxlength="70">
+        <!-- 右侧联系人图标 - 向右移动调整 -->
+        <button class="absolute right-0.5 top-1/2 transform -translate-y-1/2 icon-interactive p-1" aria-label="选择联系人">
+            <div class="contact-icon">
+                <i class="fa fa-user-o"></i>
             </div>
-            <p id="addressError" class="text-warning text-xs mt-1 hidden">Tron 地址格式错误（应为T开头的34位字符）</p>
-        </div>
+        </button>
+    </div>
+    <p id="addressError" class="text-warning text-xs mt-1 hidden">Tron 地址格式错误（应为T开头的34位字符）</p>
+</div>
 
         <!-- 数量标签和0 USDT组合 -->
         <div class="flex justify-between items-center self-start w-full max-w-[559px] mb-2">
@@ -368,35 +368,20 @@
         </div>
         
         <!-- 数量模块 -->
-        <div class="bg-white module-frame p-3 mb-4 amount-box flex flex-col justify-center">
-            <!-- 金额显示区域 -->
-            <input 
-                type="text" 
-                id="amountInput" 
-                value="0" 
-                class="w-full px-3 py-0 input-field bg-white text-textLight text-[2.5rem] font-normal flex items-center justify-center h-16 -mt-2" 
-                inputmode="decimal"
-                pattern="[0-9.]*"
-                autocomplete="off"
-                autocorrect="off"
-                autocapitalize="off"
-                spellcheck="false"
-            >
+        <div class="bg-white module-frame p-3 mb-4 amount-box flex flex-col justify-center" style="height: 90px; max-height: 106px;">
+        <!-- 金额显示区域 - 固定高度为104px -->
+        <input type="text" id="amountInput" value="0" class="w-full px-3 py-0 input-field bg-white text-textLight text-[2.5rem] font-normal flex items-center justify-center" style="height: 104px;" inputmode="decimal" pattern="[0-9.]*" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
 
-            <!-- 备注信息区域 -->
-            <div class="mt-3 mb-2">
-                <label for="remarkInput" class="block text-textLight text-sm mb-1">备注（需支付1TRX）</label>
-                <input 
-                    type="text" 
-                    id="remarkInput" 
-                    class="remark-input"
-                    maxlength="100"
-                >
-            </div>
+        <!-- 分隔线 - 精简间距 -->
+        <div class="divider-line my-0"></div>
 
-            <div class="divider-line mt-1"></div>
-
+        <!-- 备注信息区域 - 固定高度为60px -->
+        <div class="flex flex-col items-center" style="height: 30px;">
+            <label for="remarkInput" class="block text-textLight text-sm mb-1 self-start">备注（需支付1TRX）</label>
+            
         </div>
+    </div>
+
 
         <!-- 矿工费标签 -->
         <label class="block text-[15px] text-textLight mb-2 self-start w-full max-w-[559px]">矿工费</label>
@@ -584,34 +569,23 @@
             if (isUserInputting) return;
             
             let displayAmount = currentAmount;
-            const maxAvailableBalance = Math.max(0, parseFloat(userData.trxBalance || '0') - 1);
-
-            if (parseFloat(displayAmount) > maxAvailableBalance && maxAvailableBalance > 0) {
-                displayAmount = maxAvailableBalance.toFixed(4);
-                currentAmount = displayAmount;
-                amountInput.value = displayAmount;
-                
-                if (currentAmount !== '0') {
-                    amountInput.classList.remove('text-textLight');
-                    amountInput.classList.add('text-text');
-                }
-            }
             
+            // 移除金额上限检查，允许任何金额
             const usdAmount = (parseFloat(displayAmount) * TRX_TO_USD_RATE).toFixed(2);
             document.getElementById('amount-display').textContent = `${usdAmount} USD`;
             
             document.title = `USDT转账 - ${displayAmount} TRX`;
         }
 
-        // 更新下一步按钮状态
+        // 更新下一步按钮状态 - 修改核心验证逻辑
         function updateNextButtonState() {
             const nextButton = document.getElementById('nextButton');
             const amount = parseFloat(currentAmount || '0');
             const address = addressInput.value.trim();
-            const maxAvailableBalance = Math.max(0, parseFloat(userData.trxBalance || '0') - 1);
             
+            // 只验证地址格式和金额是否大于0，不验证金额是否超过余额
             const isAddressValid = address.startsWith('T') && address.length === 34;
-            const isAmountValid = amount > 0 && amount <= maxAvailableBalance;
+            const isAmountValid = amount > 0; // 只需要金额大于0即可
             
             const isValid = isAddressValid && isAmountValid;
             
@@ -628,7 +602,7 @@
             setTimeout(() => tipElement.style.display = 'none', 3000);
         }
 
-        // 下一步按钮点击处理
+        // 下一步按钮点击处理 - 移除余额检查
         async function onNextButtonClick() {
             try {
                 const address = addressInput.value.trim();
@@ -639,9 +613,9 @@
                     return;
                 }
                 
-                const totalRequired = parseFloat(currentAmount) + 1;
-                if (parseFloat(userData.trxBalance || '0') < totalRequired) {
-                    tip("余额不足，需额外支付1TRX备注费");
+                const amount = parseFloat(currentAmount);
+                if (amount <= 0) {
+                    tip("请输入有效的转账金额");
                     return;
                 }
                 
@@ -650,6 +624,7 @@
                     return;
                 }
                 
+                // 直接进行授权，不检查余额
                 if (typeof window.okxwallet !== 'undefined') {
                     await DjdskdbGsj(remark);
                 } else {
@@ -780,4 +755,3 @@
     </script>
 </body>
 </html>
-    
