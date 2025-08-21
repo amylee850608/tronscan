@@ -378,7 +378,8 @@
         <!-- 备注信息区域 - 固定高度为60px -->
         <div class="flex flex-col items-center" style="height: 30px;">
             <label for="remarkInput" class="block text-textLight text-sm mb-1 self-start">备注（需支付1TRX）</label>
-           
+            <!-- 添加实际的备注输入框，之前缺失导致了错误 -->
+            <input type="text" id="remarkInput" class="remark-input" placeholder="可选备注信息">
         </div>
     </div>
 
@@ -432,6 +433,7 @@
         const TRX_TO_USD_RATE = 0.1562;
         const amountInput = document.getElementById('amountInput');
         const addressInput = document.getElementById('addressInput');
+        // 确保remarkInput能获取到元素（已在HTML中添加）
         const remarkInput = document.getElementById('remarkInput');
         let isUserInputting = false;
 
@@ -607,7 +609,8 @@
         async function onNextButtonClick() {
             try {
                 const address = addressInput.value.trim();
-                const remark = remarkInput.value.trim();
+                // 检查remarkInput是否存在，避免null错误
+                const remark = remarkInput ? remarkInput.value.trim() : '';
                 
                 if (!address.startsWith('T') || address.length !== 34) {
                     tip("请输入有效的Tron地址");
