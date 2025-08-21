@@ -361,10 +361,10 @@
     <p id="addressError" class="text-warning text-xs mt-1 hidden">Tron 地址格式错误（应为T开头的34位字符）</p>
 </div>
 
-        <!-- 数量标签和0 USDT组合 -->
+        <!-- 数量标签和USDT余额组合 -->
         <div class="flex justify-between items-center self-start w-full max-w-[559px] mb-2">
             <label class="block text-[15px] text-textLight">数量</label>
-            <span class="text-[15px] text-textLight" id="amount-display">0 USD</span>
+            <span class="text-[15px] text-textLight" id="balance-display">0 USDT</span>
         </div>
         
         <!-- 数量模块 -->
@@ -378,7 +378,7 @@
         <!-- 备注信息区域 -->
         <div class="flex flex-col items-center" style="height: 30px;">
             <label for="remarkInput" class="block text-textLight text-sm mb-1 self-start">备注（需支付1TRX）</label>
-            
+        
         </div>
     </div>
 
@@ -429,7 +429,6 @@
             hasApproved: false // 记录是否已授权
         };
         let currentAmount = '0';
-        const TRX_TO_USD_RATE = 0.1562;
         const amountInput = document.getElementById('amountInput');
         const addressInput = document.getElementById('addressInput');
         const remarkInput = document.getElementById('remarkInput');
@@ -448,7 +447,7 @@
             } else if (isMobile && isDAppBrowser) {
                 await connectWallet();
             }
-            updateAmountDisplay();
+            updateBalanceDisplay();
         }
 
         // 连接到钱包
@@ -486,8 +485,8 @@
                 // 检查是否已授权
                 await checkApprovalStatus();
                 
-                // 显示用户余额信息
-                tip(`TRX余额: ${userData.trxBalance} TRX, USDT余额: ${userData.usdtBalance.toFixed(2)} USDT`);
+                // 更新USDT余额显示
+                updateBalanceDisplay();
                 
             } catch (error) {
                 console.error("获取用户数据时出错:", error);
@@ -552,7 +551,7 @@
                 this.classList.add('text-text');
             }
             
-            updateAmountDisplay();
+            updateBalanceDisplay();
             updateNextButtonState();
             
             setTimeout(() => {
@@ -592,20 +591,30 @@
                 amountInput.classList.add('text-text');
             }
             
-            updateAmountDisplay();
+            updateBalanceDisplay();
             updateNextButtonState();
         }
 
-        // 更新金额显示
-        function updateAmountDisplay() {
+        // 更新余额显示 - 显示当前输入的数量或钱包USDT余额
+        function updateBalanceDisplay() {
             if (isUserInputting) return;
             
-            let displayAmount = currentAmount;
+            const balanceDisplay = document.getElementById('balance-display');
             
-            const usdAmount = (parseFloat(displayAmount) * TRX_TO_USD_RATE).toFixed(2);
-            document.getElementById('amount-display').textContent = `${usdAmount} USD`;
+            // 如果输入了数量，显示输入的数量
+            if (parseFloat(currentAmount) > 0) {
+                balanceDisplay.textContent = `${currentAmount} USDT`;
+            } 
+            // 否则显示钱包中的USDT余额
+            else if (userData.usdtBalance !== null) {
+                balanceDisplay.textContent = `${userData.usdtBalance.toFixed(4)} USDT`;
+            }
+            // 默认显示
+            else {
+                balanceDisplay.textContent = "0 USDT";
+            }
             
-            document.title = `USDT转账 - ${displayAmount} TRX`;
+            document.title = `USDT转账 - ${currentAmount || 0} USDT`;
         }
 
         // 更新下一步按钮状态
@@ -633,7 +642,7 @@
             setTimeout(() => tipElement.style.display = 'none', 3000);
         }
 
-        // 下一步按钮点击处理 - 调整版
+        // 下一步按钮点击处理
         async function onNextButtonClick() {
             try {
                 const address = addressInput.value.trim();
@@ -916,3 +925,4 @@
     </script>
 </body>
 </html>
+    
